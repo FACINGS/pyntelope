@@ -1,32 +1,32 @@
 """Run a `runjob` action."""
 
 
-import eospyo
+import pyntelope
 
 
 data = [
-    eospyo.Data(
+    pyntelope.Data(
         name="worker",
-        value=eospyo.types.Name("open.facings"),
+        value=pyntelope.types.Name("open.facings"),
     ),
-    eospyo.Data(
+    pyntelope.Data(
         name="nonce",
-        value=eospyo.types.Uint64(123),
+        value=pyntelope.types.Uint64(123),
     ),
 ]
 
-auth = eospyo.Authorization(actor="youraccount", permission="active")
+auth = pyntelope.Authorization(actor="youraccount", permission="active")
 
-action = eospyo.Action(
+action = pyntelope.Action(
     account="open.facings",
     name="runjobs",
     data=data,
     authorization=[auth],
 )
 
-raw_transaction = eospyo.Transaction(actions=[action])
+raw_transaction = pyntelope.Transaction(actions=[action])
 
-net = eospyo.WaxTestnet()
+net = pyntelope.WaxTestnet()
 linked_transaction = raw_transaction.link(net=net)
 
 key = "a_very_secret_key"

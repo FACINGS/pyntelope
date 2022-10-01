@@ -98,7 +98,7 @@ def test_backend_transfer_transaction_serialization(net):
         ),
         pyntelope.Data(
             name="memo",
-            value=pyntelope.types.String("Trying EosPyo"),
+            value=pyntelope.types.String("Trying pyntelope"),
         ),
     ]
     backend_data_bytes = b""
@@ -112,7 +112,7 @@ def test_backend_transfer_transaction_serialization(net):
             "from": "user2",
             "to": "user2",
             "quantity": str(2**61) + " WAX",
-            "memo": "Trying EosPyo",
+            "memo": "Trying pyntelope",
         },
     )
 

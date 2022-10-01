@@ -4,18 +4,18 @@
   <img width="600" src="https://miro.medium.com/max/1400/1*5KEvJB1UBBsk_1ZTBtJfJA.png">
 </p>
     
-*Minimalist python library to interact with eosio blockchain networks*
+*Minimalist python library to interact with antelope blockchain networks*
  
-![Test](https://github.com/FACINGS/eospyo/actions/workflows/main_workflow.yml/badge.svg)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eospyo)
-![version](https://img.shields.io/pypi/v/eospyo)
-![GitHub repo size](https://img.shields.io/github/repo-size/facings/eospyo)
-![GitHub last commit](https://img.shields.io/github/last-commit/facings/eospyo)
+![Test](https://github.com/FACINGS/pyntelope/actions/workflows/main_workflow.yml/badge.svg)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyntelope)
+![version](https://img.shields.io/pypi/v/pyntelope)
+![GitHub repo size](https://img.shields.io/github/repo-size/facings/pyntelope)
+![GitHub last commit](https://img.shields.io/github/last-commit/facings/pyntelope)
 
 </div>
 
 # What is it?
-**eospyo** is a python library to interact with EOSIO blockchains.  
+**pyntelope** is a python library to interact with Antelope blockchains.  
 Its main focus are server side applications.  
 This library is heavily influenced by [µEOSIO](https://github.com/EOSArgentina/ueosio). Many thanks to them for the astonishing job!  
 
@@ -26,7 +26,7 @@ Its main usage today is to send transactions to the blockchain
 - Statically typed
 This library enforces and verifies types and values.
 - Serialization
-**eospyo** serializes the transaction before sending to the blockchain. 
+**pyntelope** serializes the transaction before sending to the blockchain. 
 - Paralellization
 Although python has the [GIL](https://realpython.com/python-gil/) we try to make as easier as possible to paralellize the jobs.  
 All data is as immutable and all functions are as pure as we can make them.  
@@ -40,42 +40,42 @@ However we'd advise for you to fix its version when deploying to prod.
 
 
 # Using
-Just `pip install eospyo` and play around.  
+Just `pip install pyntelope` and play around.  
 (we don't support, and have no plans to support [conda](https://docs.conda.io/en/latest/))  
 Rather then starting with long docs, just a simple example:  
 
 
 ## Use Send Message action
 ```python
-import eospyo
+import pyntelope
 
 
 print("Create Transaction")
 data=[
-    eospyo.Data(
+    pyntelope.Data(
         name="from",
-        value=eospyo.types.Name("me.wam"), 
+        value=pyntelope.types.Name("me.wam"), 
     ),
-    eospyo.Data(
+    pyntelope.Data(
         name="message",
-         value=eospyo.types.String("hello from eospyo"),
+         value=pyntelope.types.String("hello from pyntelope"),
     ),
 ]
 
-auth = eospyo.Authorization(actor="me.wam", permission="active")
+auth = pyntelope.Authorization(actor="me.wam", permission="active")
 
-action = eospyo.Action(
+action = pyntelope.Action(
     account="me.wam", # this is the contract account
     name="sendmsg", # this is the action name
     data=data,
     authorization=[auth],
 )
 
-raw_transaction = eospyo.Transaction(actions=[action])
+raw_transaction = pyntelope.Transaction(actions=[action])
 
 print("Link transaction to the network")
-net = eospyo.WaxTestnet()  # this is an alias for a testnet node
-# notice that eospyo returns a new object instead of change in place
+net = pyntelope.WaxTestnet()  # this is an alias for a testnet node
+# notice that pyntelope returns a new object instead of change in place
 linked_transaction = raw_transaction.link(net=net)
 
 
@@ -109,7 +109,7 @@ Although we have the next few steps already planned, we are happy to receive the
 
 
 ### Development
-If you want to develop for **eospyo**, here are some tips for a local development environment.
+If you want to develop for **pyntelope**, here are some tips for a local development environment.
 We'll be more then happy to receive PRs from the community.
 Also we're going full [Black](https://black.readthedocs.io/en/stable/) and enforcing [pydocstyle](http://www.pydocstyle.org/en/stable/) and [isort](https://pypi.org/project/isort/) (with the limitations described in the .flake8 file)
 
