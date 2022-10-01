@@ -2,21 +2,21 @@ import re
 
 import pytest
 
-import eospyo
+import pyntelope
 
 
 aliases = [
-    eospyo.EosMainnet,
-    eospyo.KylinTestnet,
-    eospyo.Jungle3Testnet,
-    eospyo.TelosMainnet,
-    eospyo.TelosTestnet,
-    eospyo.ProtonMainnet,
-    eospyo.ProtonTestnet,
-    eospyo.UosMainnet,
-    eospyo.FioMainnet,
-    eospyo.WaxTestnet,
-    eospyo.WaxMainnet,
+    pyntelope.EosMainnet,
+    pyntelope.KylinTestnet,
+    pyntelope.Jungle3Testnet,
+    pyntelope.TelosMainnet,
+    pyntelope.TelosTestnet,
+    pyntelope.ProtonMainnet,
+    pyntelope.ProtonTestnet,
+    pyntelope.UosMainnet,
+    pyntelope.FioMainnet,
+    pyntelope.WaxTestnet,
+    pyntelope.WaxMainnet,
 ]
 
 

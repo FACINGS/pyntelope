@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "eospyo"
-version = "0.6.3"
-description = "Interact with EOSIO blockchain networks"
-authors = ["Edson <eospyo@facings.io>"]
-homepage = "https://github.com/FACINGS/eospyo"
+name = "pyntelope"
+version = "0.1.0"
+description = "Interact with Antelope blockchains"
+authors = ["Team <pyntelope@facings.io>"]
+homepage = "https://github.com/FACINGS/pyntelope"
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -29,7 +29,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "-vvv --cov-report=term-missing --cov=eospyo"
+addopts = "-vvv --cov-report=term-missing --cov=pyntelope"
 testpaths = ["tests/unit"]
 log_level = "DEBUG"
 

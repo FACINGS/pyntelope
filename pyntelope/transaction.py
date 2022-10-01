@@ -42,11 +42,11 @@ class Data(pydantic.BaseModel):
     Data to be used in actions.
 
     name: the data field name
-    value: the typed value (types.EosioType) of the data
+    value: the typed value (types.AntelopeType) of the data
     """
 
     name: str
-    value: types.EosioType
+    value: types.AntelopeType
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1:

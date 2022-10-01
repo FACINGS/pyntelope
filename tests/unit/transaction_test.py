@@ -4,24 +4,24 @@ import json
 import pydantic
 import pytest
 
-import eospyo
+import pyntelope
 
 
 def test_create_authorization_using_dict():
-    auth = eospyo.Authorization.parse_obj(
+    auth = pyntelope.Authorization.parse_obj(
         {"actor": "aaa", "permission": "active"}
     )
-    assert isinstance(auth, eospyo.Authorization)
+    assert isinstance(auth, pyntelope.Authorization)
 
 
 def test_create_authorization_using_keywords():
-    auth = eospyo.Authorization(actor="aaa", permission="active")
-    assert isinstance(auth, eospyo.Authorization)
+    auth = pyntelope.Authorization(actor="aaa", permission="active")
+    assert isinstance(auth, pyntelope.Authorization)
 
 
 def test_create_authorization_requires_actor_len_lt_13():
     with pytest.raises(pydantic.ValidationError):
-        eospyo.Authorization(actor="a" * 14, permission="active")
+        pyntelope.Authorization(actor="a" * 14, permission="active")
 
 
 def test_authorization_is_immutable(auth):
@@ -30,43 +30,43 @@ def test_authorization_is_immutable(auth):
 
 
 def test_data_dict_serialization():
-    data = eospyo.Data(name="int_value", value=eospyo.types.Int8(10))
+    data = pyntelope.Data(name="int_value", value=pyntelope.types.Int8(10))
     data_json = data.dict()
     assert data_json == {"name": "int_value", "type": "Int8", "value": 10}
 
 
 def test_data_json_serialization():
-    data = eospyo.Data(name="int_value", value=eospyo.types.Int8(10))
+    data = pyntelope.Data(name="int_value", value=pyntelope.types.Int8(10))
     data_json = data.json()
     assert data_json == '{"name": "int_value", "type": "Int8", "value": 10}'
 
 
 def test_create_data_from_dict_with_len_3():
-    data_from_dict = eospyo.Data.parse_obj(
+    data_from_dict = pyntelope.Data.parse_obj(
         {"name": "int_value", "type": "Int8", "value": 10}
     )
-    data_from_init = eospyo.Data(name="int_value", value=eospyo.types.Int8(10))
+    data_from_init = pyntelope.Data(name="int_value", value=pyntelope.types.Int8(10))
     assert data_from_dict == data_from_init
 
 
 def test_when_create_data_from_dict_with_len_1_then_raises_value_error():
     d = {"name": "int_value"}
     with pytest.raises(ValueError):
-        eospyo.Data.parse_obj(d)
+        pyntelope.Data.parse_obj(d)
 
 
 def test_when_create_data_from_dict_with_len_4_then_raises_value_error():
     d = {"name": "int_value", "type": "Int8", "value": 10, "a": "a"}
     with pytest.raises(ValueError):
-        eospyo.Data.parse_obj(d)
+        pyntelope.Data.parse_obj(d)
 
 
 def test_backend_serialization_matches_server_serialization(net):
     data = [
-        eospyo.Data(name="from", value=eospyo.types.Name("user2")),
-        eospyo.Data(
+        pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(
             name="message",
-            value=eospyo.types.String("hello"),
+            value=pyntelope.types.String("hello"),
         ),
     ]
     backend_data_bytes = b""
@@ -88,17 +88,17 @@ def test_backend_serialization_matches_server_serialization(net):
 
 
 def test_backend_transfer_transaction_serialization(net):
-    net = eospyo.Local()
+    net = pyntelope.Local()
     data = [
-        eospyo.Data(name="from", value=eospyo.types.Name("user2")),
-        eospyo.Data(name="to", value=eospyo.types.Name("user2")),
-        eospyo.Data(
+        pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(name="to", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(
             name="quantity",
-            value=eospyo.types.Asset(str(2**61) + " WAX"),
+            value=pyntelope.types.Asset(str(2**61) + " WAX"),
         ),
-        eospyo.Data(
+        pyntelope.Data(
             name="memo",
-            value=eospyo.types.String("Trying EosPyo"),
+            value=pyntelope.types.String("Trying EosPyo"),
         ),
     ]
     backend_data_bytes = b""
@@ -123,38 +123,38 @@ def test_backend_transfer_transaction_serialization(net):
 
 def test_data_bytes_hex_return_expected_value():
     data = [
-        eospyo.Data(name="from", value=eospyo.types.Name("youraccount1")),
-        eospyo.Data(name="to", value=eospyo.types.Name("argentinaeos")),
-        eospyo.Data(
+        pyntelope.Data(name="from", value=pyntelope.types.Name("youraccount1")),
+        pyntelope.Data(name="to", value=pyntelope.types.Name("argentinaeos")),
+        pyntelope.Data(
             name="memo",
-            value=eospyo.types.String(" This tx was sent using EOSIO"),
+            value=pyntelope.types.String(" This tx was sent using PYNTELOPE"),
         ),
     ]
     data_bytes = [bytes(d) for d in data]
-    data = eospyo.types.Array(type_=eospyo.types.Bytes, values=data_bytes)
+    data = pyntelope.types.Array(type_=pyntelope.types.Bytes, values=data_bytes)
     bytes_ = bytes(data)
     action_hex = bytes_.hex()
-    expected = "0310f2d414217335f580a932d3e5a9d8351d2054686973207478207761732073656e74207573696e6720454f53494f"  # NOQA: E501
+    expected = "0310f2d414217335f580a932d3e5a9d835212054686973207478207761732073656e74207573696e672050594e54454c4f5045"  # NOQA: E501
     assert action_hex == expected
 
 
 def test_create_action():
-    auth = [eospyo.Authorization(actor="user2", permission="active")]
+    auth = [pyntelope.Authorization(actor="user2", permission="active")]
     data = []
 
-    action = eospyo.Action(
+    action = pyntelope.Action(
         account="user2",
         name="clear",
         data=data,
         authorization=auth,
     )
 
-    assert isinstance(action, eospyo.Action)
+    assert isinstance(action, pyntelope.Action)
 
 
 def test_action_requirest_at_least_one_auth():
     with pytest.raises(pydantic.ValidationError):
-        eospyo.Action(
+        pyntelope.Action(
             account="user2",
             name="clear",
             data=[],
@@ -163,29 +163,29 @@ def test_action_requirest_at_least_one_auth():
 
 
 def test_when_action_link_returns_linked_action(net):
-    action = eospyo.Action(
+    action = pyntelope.Action(
         account="user2",
         name="sendmsg",
         data=[
-            eospyo.Data(name="from", value=eospyo.types.Name("user1")),
-            eospyo.Data(
+            pyntelope.Data(name="from", value=pyntelope.types.Name("user1")),
+            pyntelope.Data(
                 name="message",
-                value=eospyo.types.String("msg sent using eospyo"),
+                value=pyntelope.types.String("msg sent using pyntelope"),
             ),
         ],
         authorization=[
-            eospyo.Authorization(actor="user1", permission="active"),
+            pyntelope.Authorization(actor="user1", permission="active"),
         ],
     )
     linked_action = action.link(net=net)
-    assert isinstance(linked_action, eospyo.LinkedAction)
+    assert isinstance(linked_action, pyntelope.LinkedAction)
 
 
 @pytest.fixture
 def action_clear():
-    auth = [eospyo.Authorization(actor="user2", permission="active")]
+    auth = [pyntelope.Authorization(actor="user2", permission="active")]
     data = []
-    action = eospyo.Action(
+    action = pyntelope.Action(
         account="user2",
         name="clear",
         data=data,
@@ -202,27 +202,27 @@ def test_action_fields_are_immutable(action_clear):
 
 
 def test_create_transaction(action_clear):
-    trans = eospyo.Transaction(actions=[action_clear])
-    assert isinstance(trans, eospyo.Transaction)
+    trans = pyntelope.Transaction(actions=[action_clear])
+    assert isinstance(trans, pyntelope.Transaction)
 
 
 def test_when_link_raw_transaction_then_returns_linked_transaction(
     action_clear, net
 ):
-    raw_trans = eospyo.Transaction(actions=[action_clear])
+    raw_trans = pyntelope.Transaction(actions=[action_clear])
     linked_trans = raw_trans.link(net=net)
-    assert isinstance(linked_trans, eospyo.LinkedTransaction)
+    assert isinstance(linked_trans, pyntelope.LinkedTransaction)
 
 
 def test_when_sign_linked_transaction_then_return_signed_transaction(
     action_clear, net
 ):
-    raw_trans = eospyo.Transaction(actions=[action_clear])
+    raw_trans = pyntelope.Transaction(actions=[action_clear])
     linked_trans = raw_trans.link(net=net)
     signed_trans = linked_trans.sign(
         key="5HsVgxhxdL9gvgcAAyCZSWNgtLxAhGfEX2YU98w6QSkePoVvPNK"
     )
-    assert isinstance(signed_trans, eospyo.SignedTransaction)
+    assert isinstance(signed_trans, pyntelope.SignedTransaction)
 
 
 # transaction serialization, id and signature
@@ -230,22 +230,22 @@ def test_when_sign_linked_transaction_then_return_signed_transaction(
 
 @pytest.fixture
 def example_transaction(net):
-    action = eospyo.LinkedAction(
+    action = pyntelope.LinkedAction(
         net=net,
         account="user2",
         name="sendmsg",
         data=[
-            eospyo.Data(name="from", value=eospyo.types.Name("user2")),
-            eospyo.Data(
+            pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
+            pyntelope.Data(
                 name="message",
-                value=eospyo.types.String("hello"),
+                value=pyntelope.types.String("hello"),
             ),
         ],
         authorization=[
-            eospyo.Authorization(actor="user2", permission="active"),
+            pyntelope.Authorization(actor="user2", permission="active"),
         ],
     )
-    linked_trans = eospyo.LinkedTransaction(
+    linked_trans = pyntelope.LinkedTransaction(
         actions=[action.link(net)],
         net=net,
         expiration_delay_sec=0,
@@ -282,7 +282,7 @@ def test_example_transaction_has_expected_signature(example_transaction):
 
 @pytest.fixture
 def trans_signed(action_clear, net):
-    raw_trans = eospyo.Transaction(actions=[action_clear])
+    raw_trans = pyntelope.Transaction(actions=[action_clear])
     linked_trans = raw_trans.link(net=net)
     trans = linked_trans.sign(
         key="5K5UHY2LjHw2QQFJKCd2PdF7hxPJnknMfQLhxbEguJJttr1DFdp",
@@ -300,7 +300,7 @@ def test_when_sign_signed_transaction_then_return_signed_transaction(
     trans2 = trans_signed.sign(
         key="5K5UHY2LjHw2QQFJKCd2PdF7hxPJnknMfQLhxbEguJJttr1DFdp"
     )
-    assert isinstance(trans2, eospyo.SignedTransaction)
+    assert isinstance(trans2, pyntelope.SignedTransaction)
 
 
 def test_double_signed_transaction_has_2_signatures(
@@ -324,20 +324,20 @@ def test_when_send_example_transaction_then_returns_expired_transaction_error(
 
 def test_e2e_with_transaction_ok(net):
     data = [
-        eospyo.Data(name="from", value=eospyo.types.Name("user2")),
-        eospyo.Data(
+        pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(
             name="message",
-            value=eospyo.types.String("I cant say hello again"),
+            value=pyntelope.types.String("I cant say hello again"),
         ),
     ]
-    trans = eospyo.Transaction(
+    trans = pyntelope.Transaction(
         actions=[
-            eospyo.Action(
+            pyntelope.Action(
                 account="user2",
                 name="sendmsg",
                 data=data,
                 authorization=[
-                    eospyo.Authorization(actor="user2", permission="active")
+                    pyntelope.Authorization(actor="user2", permission="active")
                 ],
             )
         ],
@@ -360,20 +360,20 @@ def test_e2e_with_transaction_ok(net):
 
 def test_e2e_with_transaction_signed_with_the_wrong_key(net):
     data = [
-        eospyo.Data(name="from", value=eospyo.types.Name("user2")),
-        eospyo.Data(
+        pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(
             name="message",
-            value=eospyo.types.String("I cant say hello"),
+            value=pyntelope.types.String("I cant say hello"),
         ),
     ]
-    trans = eospyo.Transaction(
+    trans = pyntelope.Transaction(
         actions=[
-            eospyo.Action(
+            pyntelope.Action(
                 account="user2",
                 name="sendmsg",
                 data=data,
                 authorization=[
-                    eospyo.Authorization(actor="user2", permission="active")
+                    pyntelope.Authorization(actor="user2", permission="active")
                 ],
             )
         ],

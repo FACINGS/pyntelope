@@ -2,10 +2,10 @@
 
 import datetime as dt
 
-import eospyo
+import pyntelope
 import pydantic
 import pytest
-from eospyo import types
+from pyntelope import types
 
 values = [
     (types.Bool, True, b"\x01"),
@@ -165,17 +165,17 @@ test_serialization = [
 
 
 @pytest.mark.parametrize("type_,action, value", test_serialization)
-def test_abi_vs_eospyo_serialization(net, type_, action, value):
+def test_abi_vs_pyntelope_serialization(net, type_, action, value):
     data_as_dict = dict(name="var", value=value, type=type_)
-    data = eospyo.Data.parse_obj(data_as_dict)
-    eospyo_data_bytes = bytes(data)
+    data = pyntelope.Data.parse_obj(data_as_dict)
+    pyntelope_data_bytes = bytes(data)
 
     nodeos_action_bytes = net.abi_json_to_bin(
         account_name="user2",
         action=action,
         json={"var": value},
     )
-    assert eospyo_data_bytes == nodeos_action_bytes
+    assert pyntelope_data_bytes == nodeos_action_bytes
 
 
 error_values = [
@@ -308,9 +308,9 @@ def test_array_elements_are_immutable_when_try_to_mutate_value():
         arr.values[1] = 2
 
 
-def test_eosio_type_cannot_be_instantiated():
+def test_antelope_type_cannot_be_instantiated():
     with pytest.raises(TypeError):
-        types.EosioType()
+        types.AntelopeType()
 
 
 def test_array_can_be_sliced_1():

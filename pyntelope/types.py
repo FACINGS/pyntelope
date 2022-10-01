@@ -1,4 +1,4 @@
-"""Eosio data types."""
+"""Antelope data types."""
 
 import calendar
 import datetime as dt
@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 import pydantic
 
 
-class EosioType(pydantic.BaseModel, ABC):
+class AntelopeType(pydantic.BaseModel, ABC):
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0:
             super().__init__(value=args[0])
@@ -41,7 +41,7 @@ class EosioType(pydantic.BaseModel, ABC):
         frozen = True
 
 
-class UnixTimestamp(EosioType):
+class UnixTimestamp(AntelopeType):
     """
     Serialize a datetime.
 
@@ -69,7 +69,7 @@ class UnixTimestamp(EosioType):
         return cls(value=datetime)
 
 
-class Bool(EosioType):
+class Bool(AntelopeType):
     value: bool
 
     def __bytes__(self):
@@ -80,7 +80,7 @@ class Bool(EosioType):
         return cls(value=int(bytes_[:1].hex(), 16))
 
 
-class String(EosioType):
+class String(AntelopeType):
     value: str
 
     def __bytes__(self):
@@ -94,7 +94,7 @@ class String(EosioType):
         if len(v) < len(v.encode("utf8")):
             msg = (
                 f'Input "{v}" has a multi-byte utf character in it, '
-                "currently eospyo does not support serialization of "
+                "currently pyntelope does not support serialization of "
                 "multi-byte utf characters."
             )
             raise ValueError(msg)
@@ -109,7 +109,7 @@ class String(EosioType):
         return cls(value=value)
 
 
-class Asset(EosioType):
+class Asset(AntelopeType):
     """
     Serialize a Asset.
 
@@ -279,7 +279,7 @@ class Asset(EosioType):
         return v
 
 
-class Symbol(EosioType):
+class Symbol(AntelopeType):
     """
     Serialize a Symbol.
 
@@ -348,7 +348,7 @@ class Symbol(EosioType):
         return cls(value=value)
 
 
-class Bytes(EosioType):
+class Bytes(AntelopeType):
     value: bytes
 
     def __bytes__(self):
@@ -359,14 +359,14 @@ class Bytes(EosioType):
         return cls(value=bytes_)
 
 
-class Array(EosioType):
+class Array(AntelopeType):
     values: tuple
     type_: type
 
     @pydantic.validator("type_")
-    def must_be_subclass_of_eosio(cls, v):
-        if not issubclass(v, EosioType):
-            raise ValueError("Type must be subclass of EosioType")
+    def must_be_subclass_of_antelope(cls, v):
+        if not issubclass(v, AntelopeType):
+            raise ValueError("Type must be subclass of AntelopeType")
         return v
 
     @pydantic.root_validator(pre=True)
@@ -403,7 +403,7 @@ class Array(EosioType):
         return Array(values=self.values[index], type_=self.type_)
 
 
-class Name(EosioType):
+class Name(AntelopeType):
     # regex = has at least one "non-dot" char
     value: pydantic.constr(
         max_length=13,
@@ -478,7 +478,7 @@ class Name(EosioType):
         return s
 
 
-class Int8(EosioType):
+class Int8(AntelopeType):
     value: pydantic.conint(ge=-128, lt=128)
 
     def __bytes__(self):
@@ -491,7 +491,7 @@ class Int8(EosioType):
         return cls(value=value)
 
 
-class Uint8(EosioType):
+class Uint8(AntelopeType):
     value: pydantic.conint(ge=0, lt=256)  # 2 ** 8
 
     def __bytes__(self):
@@ -504,7 +504,7 @@ class Uint8(EosioType):
         return cls(value=value)
 
 
-class Uint16(EosioType):
+class Uint16(AntelopeType):
     value: pydantic.conint(ge=0, lt=65536)  # 2 ** 16
 
     def __bytes__(self):
@@ -517,7 +517,7 @@ class Uint16(EosioType):
         return cls(value=value)
 
 
-class Uint32(EosioType):
+class Uint32(AntelopeType):
     value: pydantic.conint(ge=0, lt=4294967296)  # 2 ** 32
 
     def __bytes__(self):
@@ -530,7 +530,7 @@ class Uint32(EosioType):
         return cls(value=value)
 
 
-class Uint64(EosioType):
+class Uint64(AntelopeType):
     value: pydantic.conint(ge=0, lt=18446744073709551616)  # 2 ** 64
 
     def __bytes__(self):
@@ -543,7 +543,7 @@ class Uint64(EosioType):
         return cls(value=value)
 
 
-class Varuint32(EosioType):
+class Varuint32(AntelopeType):
     value: pydantic.conint(ge=0, le=20989371979)
 
     def __bytes__(self):
@@ -578,7 +578,7 @@ class Varuint32(EosioType):
 def _get_all_types():
     def is_eostype(class_):
         if isinstance(class_, type):
-            if issubclass(class_, EosioType) and class_ is not EosioType:
+            if issubclass(class_, AntelopeType) and class_ is not AntelopeType:
                 return True
         return False
 
@@ -593,7 +593,7 @@ def _get_all_types():
 _all_types = _get_all_types()
 
 
-def from_string(type_: str) -> EosioType:
+def from_string(type_: str) -> AntelopeType:
     type_ = type_.lower()
     try:
         class_ = _all_types[type_]

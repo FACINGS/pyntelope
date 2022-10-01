@@ -4,7 +4,7 @@ import httpx
 import pydantic
 import pytest
 
-import eospyo
+import pyntelope
 
 
 def test_should_always_pass():
@@ -12,13 +12,13 @@ def test_should_always_pass():
 
 
 def test_when_instantiate_net_returns_net_object():
-    net = eospyo.Net(host="http://127.0.0.1:8888")
-    assert isinstance(net, eospyo.Net)
+    net = pyntelope.Net(host="http://127.0.0.1:8888")
+    assert isinstance(net, pyntelope.Net)
 
 
 def test_when_instantiate_net_with_incorrect_host_format_then_raises_error():
     with pytest.raises(pydantic.ValidationError):
-        eospyo.Net(host="rpc://127.0.0.1:8888")
+        pyntelope.Net(host="rpc://127.0.0.1:8888")
 
 
 def test_when_net_get_info_then_returns_dict(net):
@@ -29,7 +29,7 @@ def test_when_net_get_info_then_returns_dict(net):
 def test_given_http_timeout_when_net_get_info_then_raise_connection_error(
     httpx_mock, net
 ):
-    with pytest.raises(eospyo.exc.ConnectionError):
+    with pytest.raises(pyntelope.exc.ConnectionError):
         net.get_info()
 
 
@@ -40,7 +40,7 @@ def test_given_http_write_error_when_net_get_info_then_raise_connection_error(
         raise httpx.WriteError("")
 
     httpx_mock.add_callback(raise_write_error)
-    with pytest.raises(eospyo.exc.ConnectionError):
+    with pytest.raises(pyntelope.exc.ConnectionError):
         net.get_info()
 
 
@@ -48,7 +48,7 @@ def test_given_http_return_400_when_net_get_info_then_raise_connection_error(
     httpx_mock, net
 ):
     httpx_mock.add_response(status_code=400)
-    with pytest.raises(eospyo.exc.ConnectionError):
+    with pytest.raises(pyntelope.exc.ConnectionError):
         net.get_info()
 
 
@@ -80,14 +80,14 @@ aliases = [
 
 @pytest.mark.parametrize("alias", aliases)
 def test_when_instantiate_though_alias_then_host_has_tld(alias):
-    net_factory = getattr(eospyo, alias)
+    net_factory = getattr(pyntelope, alias)
     net = net_factory()
     patt = r"^https://[\w\.]{3,}"
     assert re.match(patt, net.host)
 
 
 def test_when_instantiate_localnet_then_host_is_localhost():
-    net = eospyo.Local()
+    net = pyntelope.Local()
     assert net.host.startswith("http://127.0.0.1")
 
 
@@ -199,20 +199,20 @@ def test_when_get_table_by_scope_with_no_contract_then_rows_are_empty(net):
 def test_when_get_table_by_scope_with_contract_then_rows_have_objects(net):
     # send a transaction just for the table to be created
     data = [
-        eospyo.Data(name="from", value=eospyo.types.Name("user2")),
-        eospyo.Data(
+        pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(
             name="message",
-            value=eospyo.types.String("hello"),
+            value=pyntelope.types.String("hello"),
         ),
     ]
-    trans = eospyo.Transaction(
+    trans = pyntelope.Transaction(
         actions=[
-            eospyo.Action(
+            pyntelope.Action(
                 account="user2",
                 name="sendmsg",
                 data=data,
                 authorization=[
-                    eospyo.Authorization(actor="user2", permission="active")
+                    pyntelope.Authorization(actor="user2", permission="active")
                 ],
             )
         ],

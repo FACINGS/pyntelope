@@ -11,8 +11,8 @@ from urllib.parse import urljoin
 import httpx
 import pydantic
 
-from eospyo import exc
-from eospyo._version import __version__
+from pyntelope import exc
+from pyntelope._version import __version__
 
 
 class Net(pydantic.BaseModel):
@@ -30,7 +30,7 @@ class Net(pydantic.BaseModel):
         verb: str = "POST",
     ):
         url = urljoin(self.host, endpoint)
-        headers = {"user-agent": f"Eospyo/{__version__}"}
+        headers = {"user-agent": f"pyntelope/{__version__}"}
 
         try:
             resp = httpx.post(url, json=payload, headers=headers)
