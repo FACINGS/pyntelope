@@ -3,12 +3,14 @@
 import binascii
 import calendar
 import datetime as dt
+import json
 import re
 import struct
 import sys
 import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any, Dict, List
 
 import pydantic
 
@@ -578,31 +580,198 @@ class Varuint32(AntelopeType):
         return cls(value=value)
 
 
+class AbiSchema(pydantic.BaseModel):
+    comment: str = None
+    version: str
+    types: List
+    structs: List
+    actions: List
+    tables: List
+    ricardian_clauses: List = None
+    abi_extensions: List = None
+    variants: List = None
+    action_results: List = None
+    kv_tables: dict = None
+    abi_extensions: List = None
+
+    class Config:
+        extra = "forbid"
+        fields = {"comment": "____comment"}
+
+
+class Abi(AntelopeType):
+    value: dict
+
+    def import_abi_data(self, json_data):
+
+        abi_dict = AbiSchema(**json_data)
+
+        version = String(abi_dict.version)
+        type_list = []
+        struct_list = []
+        action_list = []
+        table_list = []
+
+        for value in abi_dict.types:
+            type_list.append(AbiType(value))
+        for value in abi_dict.structs:
+            struct_list.append(AbiStruct(value))
+        for value in abi_dict.actions:
+            action_list.append(AbiAction(value))
+        for value in abi_dict.tables:
+            table_list.append(AbiTable(value))
+
+        types = (
+            Array(type_=AbiType, values=type_list) if type_list else String("")
+        )
+        structs = (
+            Array(type_=AbiStruct, values=struct_list)
+            if struct_list
+            else String("")
+        )
+        actions = (
+            Array(type_=AbiAction, values=action_list)
+            if action_list
+            else String("")
+        )
+        tables = (
+            Array(type_=AbiTable, values=table_list)
+            if table_list
+            else String("")
+        )
+        ricardian_clauses = String("")
+        error_messages = String("")
+        abi_extensions = String("")
+        variants = String("")
+        action_results = String("")
+        kv_tables = String("")
+
+        abi_components = [
+            version,
+            types,
+            structs,
+            actions,
+            tables,
+            ricardian_clauses,
+            error_messages,
+            abi_extensions,
+            variants,
+            action_results,
+            kv_tables,
+        ]
+
+        return abi_components
+
+    @classmethod
+    def from_file(cls, file: Path, *, extension: str = ".abi"):
+        """Create a abi object from a .abi or from a zipped file."""
+        file = _from_file(file, extension)
+        return json.load(file)
+
+    def to_hex(self, abi_components):
+        abi_bytes = b""
+        for value in abi_components:
+            abi_bytes += bytes(value)
+
+        return _bin_to_hex(abi_bytes)
+
+    def __bytes__(self):
+        abi_components = self.import_abi_data(self.value)
+        hexcode = self.to_hex(abi_components)
+        uint8_array = _hex_to_uint8_array(hexcode)
+
+        return bytes(uint8_array)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        return cls(value=bytes_)
+
+
+class AbiType(AntelopeType):
+    value: Dict[str, str]
+
+    def __bytes__(self):
+        new_type_name = String(self.value["new_type_name"])
+        json_type = String(self.value["type"])
+        return bytes(new_type_name) + bytes(json_type)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        return cls(value=bytes_)
+
+
+class AbiStruct(AntelopeType):
+    value: Dict[str, Any]
+
+    def __bytes__(self):
+        name = String(self.value["name"])
+        base = String(self.value["base"])
+        field_bytes = []
+        for field in self.value["fields"]:
+            field_name = String(field["name"])
+            field_type = String(field["type"])
+            field_bytes.append(bytes(field_name) + bytes(field_type))
+
+        field_bytes_array = Array(type_=Bytes, values=field_bytes)
+        return bytes(name) + bytes(base) + bytes(field_bytes_array)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        return cls(value=bytes_)
+
+
+class AbiAction(AntelopeType):
+    value: Dict[str, str]
+
+    def __bytes__(self):
+        name = Name(self.value["name"])
+        json_type = String(self.value["type"])
+        ricardian_contract = String(self.value["ricardian_contract"])
+
+        return bytes(name) + bytes(json_type) + bytes(ricardian_contract)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        return cls(value=bytes_)
+
+
+class AbiTable(AntelopeType):
+    value: Dict[str, Any]
+
+    def __bytes__(self):
+        name = Name(self.value["name"])
+        index_type = String(self.value["index_type"])
+        key_names = self.value["key_names"]
+        key_types = self.value["key_types"]
+        json_type = String(self.value["type"])
+
+        key_names_array = Array(type_=String, values=key_names)
+        key_types_array = Array(type_=String, values=key_types)
+
+        return (
+            bytes(name)
+            + bytes(index_type)  # noqa: W503
+            + bytes(key_names_array)  # noqa: W503
+            + bytes(key_types_array)  # noqa: W503
+            + bytes(json_type)  # noqa: W503
+        )
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        return cls(value=bytes_)
+
+
 class Wasm(AntelopeType):
     value: bytes
 
     @classmethod
     def from_file(cls, file: Path, *, extension: str = ".wasm"):
         """Create a wasm object from a .wasm or from a zipped file."""
-        if isinstance(file, Path):
-            fullpath = file
-        else:
-            fullpath = Path().resolve() / Path(file)
-
-        if fullpath.suffix == ".zip":
-            with zipfile.ZipFile(fullpath) as zp:
-                zip_path = str(fullpath.stem) + extension
-                with zp.open(zip_path, mode="r") as f:
-                    file_contents = f.read()
-
-        else:
-            with open(fullpath, "rb") as f:
-                file_contents = f.read()
-
-        return cls(value=file_contents)
+        file = _from_file(file, extension)
+        return file
 
     def to_hex(self):
-        return str(binascii.hexlify(self.value).decode("utf-8"))
+        return _bin_to_hex(self.value)
 
     def __bytes__(self):
         uint8_array = _hex_to_uint8_array(self.to_hex())
@@ -615,6 +784,10 @@ class Wasm(AntelopeType):
         hexcode = _uint8_list_to_hex(uint8_list)
         value = _hex_to_bin(hexcode)
         return cls(value=value)
+
+
+def _bin_to_hex(bin: bytes) -> str:
+    return str(binascii.hexlify(bin).decode("utf-8"))
 
 
 def _hex_to_uint8_array(hex_string: str) -> Array:
@@ -664,6 +837,25 @@ def _get_all_types():
 
 
 _all_types = _get_all_types()
+
+
+def _from_file(file: Path, *, extension: str):
+        if isinstance(file, Path):
+            fullpath = file
+        else:
+            fullpath = Path().resolve() / Path(file)
+
+        if fullpath.suffix == ".zip":
+            with zipfile.ZipFile(fullpath) as zp:
+                zip_path = str(fullpath.stem) + extension
+                with zp.open(zip_path, mode="r") as f:
+                    file_contents = f.read()
+
+        else:
+            with open(fullpath, "rb") as f:
+                file_contents = f.read()
+        
+        return file_contents
 
 
 def from_string(type_: str) -> AntelopeType:
