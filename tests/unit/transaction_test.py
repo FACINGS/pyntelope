@@ -1,10 +1,11 @@
+"""transaction tests."""
+
 import datetime as dt
 import json
 
 import pydantic
-import pytest
-
 import pyntelope
+import pytest
 
 from .contracts.valid import hello as valid_contract
 
@@ -47,7 +48,9 @@ def test_create_data_from_dict_with_len_3():
     data_from_dict = pyntelope.Data.parse_obj(
         {"name": "int_value", "type": "Int8", "value": 10}
     )
-    data_from_init = pyntelope.Data(name="int_value", value=pyntelope.types.Int8(10))
+    data_from_init = pyntelope.Data(
+        name="int_value", value=pyntelope.types.Int8(10)
+    )
     assert data_from_dict == data_from_init
 
 
@@ -151,9 +154,39 @@ def test_backend_set_wasm_code_transaction_serialization(net):
     assert backend_data_bytes == server_data_bytes
 
 
+def test_backend_set_abi_transaction_serialization(net):
+    abi_obj = pyntelope.types.Abi.from_file(valid_contract.path_abi)
+
+    data = [
+        pyntelope.Data(name="account", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(
+            name="abi",
+            value=pyntelope.types.Abi(abi_obj),
+        ),
+    ]
+    backend_data_bytes = b""
+    for d in data:
+        backend_data_bytes += bytes(d)
+
+    server_resp = net.abi_json_to_bin(
+        account_name="eosio",
+        action="setabi",
+        json={
+            "account": "user2",
+            "abi": abi_obj.to_hex(),
+        },
+    )
+
+    server_data_bytes = server_resp
+
+    assert backend_data_bytes == server_data_bytes
+
+
 def test_data_bytes_hex_return_expected_value():
     data = [
-        pyntelope.Data(name="from", value=pyntelope.types.Name("youraccount1")),
+        pyntelope.Data(
+            name="from", value=pyntelope.types.Name("youraccount1")
+        ),
         pyntelope.Data(name="to", value=pyntelope.types.Name("argentinaeos")),
         pyntelope.Data(
             name="memo",
@@ -161,7 +194,9 @@ def test_data_bytes_hex_return_expected_value():
         ),
     ]
     data_bytes = [bytes(d) for d in data]
-    data = pyntelope.types.Array(type_=pyntelope.types.Bytes, values=data_bytes)
+    data = pyntelope.types.Array(
+        type_=pyntelope.types.Bytes, values=data_bytes
+    )
     bytes_ = bytes(data)
     action_hex = bytes_.hex()
     expected = "0310f2d414217335f580a932d3e5a9d835212054686973207478207761732073656e74207573696e672050594e54454c4f5045"  # NOQA: E501

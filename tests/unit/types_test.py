@@ -1,13 +1,13 @@
 """type tests."""
 
 import datetime as dt
+import json
 import os
 import zipfile
 from pathlib import Path
 
 import pydantic
 import pytest
-
 from pyntelope import types
 
 from .contracts.valid import hello as valid_contract
@@ -25,6 +25,12 @@ def load_bin_from_path(path: str, zip_extension=".wasm"):
     else:
         with open(filename, "rb") as f:
             return f.read()
+
+
+def load_dict_from_path(path: str):
+    filename = Path().resolve() / Path(path)
+    with open(filename, "rb") as f:
+        return json.load(f)
 
 
 values = [
@@ -115,11 +121,13 @@ values = [
     ),
     (
         types.Wasm,
-        load_bin_from_path("tests/unit/contracts/valid/hello.wasm"),
-        load_bin_from_path(
-            "tests/unit/contracts/bin_files/wasm_pass_bytes.zip",
-            ".bin",
-        ),
+        load_bin_from_path("contracts/valid/hello.wasm"),
+        load_bin_from_path("contracts/bin_files/wasm_pass_bytes.zip", ".bin"),
+    ),
+    (
+        types.Abi,
+        load_dict_from_path("contracts/valid/hello.abi"),
+        load_bin_from_path("contracts/bin_files/abi_pass_bytes.bin"),
     ),
 ]
 
@@ -133,10 +141,11 @@ def test_type_bytes(class_, input_, expected_output):
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
 def test_bytes_to_type(class_, input_, expected_output):
-    instance = class_(input_)
-    bytes_ = bytes(instance)
-    new_instance = class_.from_bytes(bytes_)
-    assert new_instance == instance
+    if class_ is not types.Abi:
+        instance = class_(input_)
+        bytes_ = bytes(instance)
+        new_instance = class_.from_bytes(bytes_)
+        assert new_instance == instance
 
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
@@ -341,26 +350,26 @@ def test_array_can_be_sliced_2():
 
 def test_wasm_from_zip_file_return_wasm_type():
     path = valid_contract.path_zip
-    wasm_obj = types.Wasm.from_file(file=path)
+    wasm_obj = types.Wasm.from_file(file_contents=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
 def test_wasm_from_wasm_file_return_wasm_type():
     path = valid_contract.path_wasm
-    wasm_obj = types.Wasm.from_file(file=path)
+    wasm_obj = types.Wasm.from_file(file_contents=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
 def test_wasm_from_zip_file_value_matches_expected_bytes():
     path = valid_contract.path_zip
-    wasm_obj = types.Wasm.from_file(file=path)
-    assert wasm_obj.value == valid_contract.bytes_
+    wasm_obj = types.Wasm.from_file(file_contents=path)
+    assert wasm_obj.value == valid_contract.wasm_bytes_
 
 
 def test_wasm_from_wasm_file_value_matches_expected_bytes():
     path = valid_contract.path_wasm
-    wasm_obj = types.Wasm.from_file(file=path)
-    assert wasm_obj.value == valid_contract.bytes_
+    wasm_obj = types.Wasm.from_file(file_contents=path)
+    assert wasm_obj.value == valid_contract.wasm_bytes_
 
 
 def test_wasm_from_file_equal_to_wasm_from_bytes():
@@ -372,12 +381,44 @@ def test_wasm_from_file_equal_to_wasm_from_bytes():
 
 def test_wasm_from_file_with_string_and_fullpath_returns_wasm_object():
     path = str(valid_contract.path_zip.absolute())
-    wasm_obj = types.Wasm.from_file(file=path)
+    wasm_obj = types.Wasm.from_file(file_contents=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
 def test_wasm_from_file_with_string_and_relative_path_returns_wasm_object():
     local_path = os.getcwd()
     path = str(valid_contract.path_zip.relative_to(local_path))
-    wasm_obj = types.Wasm.from_file(file=path)
+    wasm_obj = types.Wasm.from_file(file_contents=path)
     assert isinstance(wasm_obj, types.Wasm)
+
+
+def test_abi_from_bi_file_return_abi_type():
+    path = valid_contract.path_abi
+    abi_obj = types.Abi.from_file(file_contents=path)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_abi_file_value_matches_expected_dict():
+    path = valid_contract.path_abi
+    abi_obj = types.Abi.from_file(file_contents=path)
+    assert abi_obj.value == valid_contract.abi_dict_
+
+
+def test_abi_from_file_equal_to_abi_from_bytes():
+    file_path = valid_contract.path_abi
+    from_bytes = types.Abi(value=load_dict_from_path(file_path))
+    from_file = types.Abi.from_file(file_path)
+    assert from_bytes == from_file
+
+
+def test_abi_from_file_with_string_and_fullpath_returns_abi_object():
+    path = str(valid_contract.path_abi.absolute())
+    abi_obj = types.Abi.from_file(file_contents=path)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_file_with_string_and_relative_path_returns_abi_object():
+    local_path = os.getcwd()
+    path = str(valid_contract.path_abi.relative_to(local_path))
+    abi_obj = types.Abi.from_file(file_contents=path)
+    assert isinstance(abi_obj, types.Abi)
