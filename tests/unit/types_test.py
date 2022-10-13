@@ -121,13 +121,13 @@ values = [
     ),
     (
         types.Wasm,
-        load_bin_from_path("contracts/valid/hello.wasm"),
-        load_bin_from_path("contracts/bin_files/wasm_pass_bytes.zip", ".bin"),
+        load_bin_from_path("tests/unit/contracts/valid/hello.wasm"),
+        load_bin_from_path("tests/unit/contracts/bin_files/wasm_pass_bytes.zip", ".bin"),
     ),
     (
         types.Abi,
-        load_dict_from_path("contracts/valid/hello.abi"),
-        load_bin_from_path("contracts/bin_files/abi_pass_bytes.bin"),
+        load_dict_from_path("tests/unit/contracts/valid/hello.abi"),
+        load_bin_from_path("tests/unit/contracts/bin_files/abi_pass_bytes.bin"),
     ),
 ]
 
