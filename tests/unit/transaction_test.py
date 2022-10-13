@@ -6,6 +6,8 @@ import pytest
 
 import pyntelope
 
+from .contracts.valid import hello as valid_contract
+
 
 def test_create_authorization_using_dict():
     auth = pyntelope.Authorization.parse_obj(
@@ -88,7 +90,6 @@ def test_backend_serialization_matches_server_serialization(net):
 
 
 def test_backend_transfer_transaction_serialization(net):
-    net = pyntelope.Local()
     data = [
         pyntelope.Data(name="from", value=pyntelope.types.Name("user2")),
         pyntelope.Data(name="to", value=pyntelope.types.Name("user2")),
@@ -113,6 +114,35 @@ def test_backend_transfer_transaction_serialization(net):
             "to": "user2",
             "quantity": str(2**61) + " WAX",
             "memo": "Trying pyntelope",
+        },
+    )
+
+    server_data_bytes = server_resp
+
+    assert backend_data_bytes == server_data_bytes
+
+
+def test_backend_set_wasm_code_transaction_serialization(net):
+    wasm_obj = pyntelope.types.Wasm.from_file(valid_contract.path_zip)
+
+    data = [
+        pyntelope.Data(name="account", value=pyntelope.types.Name("user2")),
+        pyntelope.Data(name="vmtype", value=pyntelope.types.Uint8(0)),
+        pyntelope.Data(name="vmversion", value=pyntelope.types.Uint8(0)),
+        pyntelope.Data(name="code", value=wasm_obj),
+    ]
+    backend_data_bytes = b""
+    for d in data:
+        backend_data_bytes += bytes(d)
+
+    server_resp = net.abi_json_to_bin(
+        account_name="eosio",
+        action="setcode",
+        json={
+            "account": "user2",
+            "vmtype": 0,
+            "vmversion": 0,
+            "code": wasm_obj.to_hex(),
         },
     )
 
