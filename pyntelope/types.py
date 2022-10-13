@@ -663,12 +663,13 @@ class Abi(AntelopeType):
         return abi_components
 
     @classmethod
-    def from_file(cls, file: Path, *, extension: str = ".abi"):
+    def from_file(cls, file_contents: Path, *, extension: str = ".abi"):
         """Create a abi object from a .abi or from a zipped file."""
-        file = _from_file(file, extension)
-        return json.load(file)
+        file_contents = _from_file(file_contents, extension=extension)
+        return cls(value=json.loads(file_contents))
 
-    def to_hex(self, abi_components):
+    def to_hex(self):
+        abi_components = self.import_abi_data(self.value)
         abi_bytes = b""
         for value in abi_components:
             abi_bytes += bytes(value)
@@ -676,8 +677,7 @@ class Abi(AntelopeType):
         return _bin_to_hex(abi_bytes)
 
     def __bytes__(self):
-        abi_components = self.import_abi_data(self.value)
-        hexcode = self.to_hex(abi_components)
+        hexcode = self.to_hex()
         uint8_array = _hex_to_uint8_array(hexcode)
 
         return bytes(uint8_array)
@@ -765,10 +765,10 @@ class Wasm(AntelopeType):
     value: bytes
 
     @classmethod
-    def from_file(cls, file: Path, *, extension: str = ".wasm"):
+    def from_file(cls, file_contents: Path, *, extension: str = ".wasm"):
         """Create a wasm object from a .wasm or from a zipped file."""
-        file = _from_file(file, extension)
-        return file
+        file_contents = _from_file(file_contents, extension=extension)
+        return cls(value=file_contents)
 
     def to_hex(self):
         return _bin_to_hex(self.value)
@@ -840,22 +840,22 @@ _all_types = _get_all_types()
 
 
 def _from_file(file: Path, *, extension: str):
-        if isinstance(file, Path):
-            fullpath = file
-        else:
-            fullpath = Path().resolve() / Path(file)
+    if isinstance(file, Path):
+        fullpath = file
+    else:
+        fullpath = Path().resolve() / Path(file)
 
-        if fullpath.suffix == ".zip":
-            with zipfile.ZipFile(fullpath) as zp:
-                zip_path = str(fullpath.stem) + extension
-                with zp.open(zip_path, mode="r") as f:
-                    file_contents = f.read()
-
-        else:
-            with open(fullpath, "rb") as f:
+    if fullpath.suffix == ".zip":
+        with zipfile.ZipFile(fullpath) as zp:
+            zip_path = str(fullpath.stem) + extension
+            with zp.open(zip_path, mode="r") as f:
                 file_contents = f.read()
-        
-        return file_contents
+
+    else:
+        with open(fullpath, "rb") as f:
+            file_contents = f.read()
+
+    return file_contents
 
 
 def from_string(type_: str) -> AntelopeType:
