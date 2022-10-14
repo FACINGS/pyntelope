@@ -767,11 +767,9 @@ class Wasm(AntelopeType):
     value: bytes
 
     @classmethod
-    def from_file(cls, file_contents: Path, *, extension: str = ".wasm"):
+    def from_file(cls, file: Path, *, extension: str = ".wasm"):
         """Create a wasm object from a .wasm or from a zipped file."""
-        file_contents = _load_bin_from_file(
-            file=file_contents, extension=extension
-        )
+        file_contents = _load_bin_from_file(file=file, extension=extension)
         return cls(value=file_contents)
 
     def to_hex(self):

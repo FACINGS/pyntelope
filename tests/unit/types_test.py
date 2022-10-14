@@ -344,25 +344,25 @@ def test_array_can_be_sliced_2():
 
 def test_wasm_from_zip_file_return_wasm_type():
     path = valid_contract.path_zip
-    wasm_obj = types.Wasm.from_file(file_contents=path)
+    wasm_obj = types.Wasm.from_file(file=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
 def test_wasm_from_wasm_file_return_wasm_type():
     path = valid_contract.path_wasm
-    wasm_obj = types.Wasm.from_file(file_contents=path)
+    wasm_obj = types.Wasm.from_file(file=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
 def test_wasm_from_zip_file_value_matches_expected_bytes():
     path = valid_contract.path_zip
-    wasm_obj = types.Wasm.from_file(file_contents=path)
+    wasm_obj = types.Wasm.from_file(file=path)
     assert wasm_obj.value == valid_contract.wasm_bytes_
 
 
 def test_wasm_from_wasm_file_value_matches_expected_bytes():
     path = valid_contract.path_wasm
-    wasm_obj = types.Wasm.from_file(file_contents=path)
+    wasm_obj = types.Wasm.from_file(file=path)
     assert wasm_obj.value == valid_contract.wasm_bytes_
 
 
@@ -379,14 +379,14 @@ def test_wasm_from_file_equal_to_wasm_from_bytes():
 
 def test_wasm_from_file_with_string_and_fullpath_returns_wasm_object():
     path = str(valid_contract.path_zip.absolute())
-    wasm_obj = types.Wasm.from_file(file_contents=path)
+    wasm_obj = types.Wasm.from_file(file=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
 def test_wasm_from_file_with_string_and_relative_path_returns_wasm_object():
     local_path = os.getcwd()
     path = str(valid_contract.path_zip.relative_to(local_path))
-    wasm_obj = types.Wasm.from_file(file_contents=path)
+    wasm_obj = types.Wasm.from_file(file=path)
     assert isinstance(wasm_obj, types.Wasm)
 
 
