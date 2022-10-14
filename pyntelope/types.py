@@ -665,7 +665,9 @@ class Abi(AntelopeType):
     @classmethod
     def from_file(cls, file_contents: Path, *, extension: str = ".abi"):
         """Create a abi object from a .abi or from a zipped file."""
-        file_contents = _from_file(file_contents, extension=extension)
+        file_contents = _load_bin_from_file(
+            file=file_contents, extension=extension
+        )
         return cls(value=json.loads(file_contents))
 
     def to_hex(self):
@@ -767,7 +769,9 @@ class Wasm(AntelopeType):
     @classmethod
     def from_file(cls, file_contents: Path, *, extension: str = ".wasm"):
         """Create a wasm object from a .wasm or from a zipped file."""
-        file_contents = _from_file(file_contents, extension=extension)
+        file_contents = _load_bin_from_file(
+            file=file_contents, extension=extension
+        )
         return cls(value=file_contents)
 
     def to_hex(self):
@@ -839,7 +843,7 @@ def _get_all_types():
 _all_types = _get_all_types()
 
 
-def _from_file(file: Path, *, extension: str):
+def _load_bin_from_file(*, file: Path, extension: str):
     if isinstance(file, Path):
         fullpath = file
     else:
