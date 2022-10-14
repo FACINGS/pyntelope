@@ -663,11 +663,9 @@ class Abi(AntelopeType):
         return abi_components
 
     @classmethod
-    def from_file(cls, file_contents: Path, *, extension: str = ".abi"):
+    def from_file(cls, file: Path, *, extension: str = ".abi"):
         """Create a abi object from a .abi or from a zipped file."""
-        file_contents = _load_bin_from_file(
-            file=file_contents, extension=extension
-        )
+        file_contents = _load_bin_from_file(file=file, extension=extension)
         return cls(value=json.loads(file_contents))
 
     def to_hex(self):

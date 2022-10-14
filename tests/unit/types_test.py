@@ -392,13 +392,13 @@ def test_wasm_from_file_with_string_and_relative_path_returns_wasm_object():
 
 def test_abi_from_bi_file_return_abi_type():
     path = valid_contract.path_abi
-    abi_obj = types.Abi.from_file(file_contents=path)
+    abi_obj = types.Abi.from_file(file=path)
     assert isinstance(abi_obj, types.Abi)
 
 
 def test_abi_from_abi_file_value_matches_expected_dict():
     path = valid_contract.path_abi
-    abi_obj = types.Abi.from_file(file_contents=path)
+    abi_obj = types.Abi.from_file(file=path)
     assert abi_obj.value == valid_contract.abi_dict_
 
 
@@ -411,12 +411,12 @@ def test_abi_from_file_equal_to_abi_from_bytes():
 
 def test_abi_from_file_with_string_and_fullpath_returns_abi_object():
     path = str(valid_contract.path_abi.absolute())
-    abi_obj = types.Abi.from_file(file_contents=path)
+    abi_obj = types.Abi.from_file(file=path)
     assert isinstance(abi_obj, types.Abi)
 
 
 def test_abi_from_file_with_string_and_relative_path_returns_abi_object():
     local_path = os.getcwd()
     path = str(valid_contract.path_abi.relative_to(local_path))
-    abi_obj = types.Abi.from_file(file_contents=path)
+    abi_obj = types.Abi.from_file(file=path)
     assert isinstance(abi_obj, types.Abi)
