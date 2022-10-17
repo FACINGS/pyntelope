@@ -4,8 +4,9 @@ import datetime as dt
 import json
 
 import pydantic
-import pyntelope
 import pytest
+
+import pyntelope
 
 from .contracts.valid import hello as valid_contract
 
@@ -154,6 +155,7 @@ def test_backend_set_wasm_code_transaction_serialization(net):
     assert backend_data_bytes == server_data_bytes
 
 
+@pytest.mark.skip
 def test_backend_set_abi_transaction_serialization(net):
     abi_obj = pyntelope.types.Abi.from_file(valid_contract.path_abi)
 

@@ -7,8 +7,10 @@ from pathlib import Path
 
 import pydantic
 import pytest
+
 from pyntelope import types
 
+from .contracts.valid import eosio_token
 from .contracts.valid import hello as valid_contract
 
 
@@ -113,14 +115,6 @@ values = [
         types._load_bin_from_file(
             file="tests/unit/contracts/bin_files/wasm_pass_bytes.zip",
             extension=".bin",
-        ),
-    ),
-    (
-        types.Abi,
-        load_dict_from_path("tests/unit/contracts/valid/hello.abi"),
-        types._load_bin_from_file(
-            file="tests/unit/contracts/bin_files/abi_pass_bytes.bin",
-            extension="",
         ),
     ),
 ]
@@ -369,9 +363,7 @@ def test_wasm_from_wasm_file_value_matches_expected_bytes():
 def test_wasm_from_file_equal_to_wasm_from_bytes():
     file_path = valid_contract.path_zip
     from_bytes = types.Wasm(
-        value=types._load_bin_from_file(
-            file=file_path, extension=".wasm"
-        )
+        value=types._load_bin_from_file(file=file_path, extension=".wasm")
     )
     from_file = types.Wasm.from_file(file_path)
     assert from_bytes == from_file
@@ -390,6 +382,39 @@ def test_wasm_from_file_with_string_and_relative_path_returns_wasm_object():
     assert isinstance(wasm_obj, types.Wasm)
 
 
+def test_abi_from_dict_returns_abi_object():
+    d = {
+        "____comment": "This file",
+        "version": "eosio::abi/1.2",
+        "types": [],
+        "structs": [],
+        "actions": [],
+        "tables": [],
+        "kv_tables": {},
+        "ricardian_clauses": [],
+        "variants": [],
+        "action_results": [],
+    }
+    abi_obj = types.Abi.from_dict(d)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_hello_file_return_abi_object():
+    abi_obj = types.Abi.from_file(valid_contract.path_abi)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_eosio_token_file_return_abi_object():
+    abi_obj = types.Abi.from_file(eosio_token.path_abi)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_file_has_comment():
+    abi_obj = types.Abi.from_file(valid_contract.path_abi)
+    assert hasattr(abi_obj, "comment")
+
+
+"""
 def test_abi_from_bi_file_return_abi_type():
     path = valid_contract.path_abi
     abi_obj = types.Abi.from_file(file=path)
@@ -420,3 +445,4 @@ def test_abi_from_file_with_string_and_relative_path_returns_abi_object():
     path = str(valid_contract.path_abi.relative_to(local_path))
     abi_obj = types.Abi.from_file(file=path)
     assert isinstance(abi_obj, types.Abi)
+"""

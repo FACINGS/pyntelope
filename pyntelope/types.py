@@ -1,4 +1,4 @@
-"""Antelope data types."""
+"""Antelope "primitive" data types."""
 
 import binascii
 import calendar
@@ -10,18 +10,12 @@ import sys
 import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List
 
 import pydantic
 
 
 class AntelopeType(pydantic.BaseModel, ABC):
-    def __init__(self, *args, **kwargs):
-        if len(args) == 1 and len(kwargs) == 0:
-            super().__init__(value=args[0])
-        else:
-            super().__init__(*args, **kwargs)
-
     @pydantic.validator("value", pre=True, check_fields=False)
     def check_if_same_type(cls, v):
         if type(v) is cls:
@@ -46,7 +40,21 @@ class AntelopeType(pydantic.BaseModel, ABC):
         frozen = True
 
 
-class UnixTimestamp(AntelopeType):
+class Primitive(AntelopeType, ABC):
+    def __init__(self, *args, **kwargs):
+        if len(kwargs) == 1 and "value" in kwargs:
+            super().__init__(value=kwargs["value"])
+        else:
+            super().__init__(value=args[0])
+
+
+class Composte(AntelopeType, ABC):
+    @abstractmethod
+    def from_dict(self):
+        """Instantiate class from a dict or list object."""
+
+
+class UnixTimestamp(Primitive):
     """
     Serialize a datetime.
 
@@ -74,7 +82,7 @@ class UnixTimestamp(AntelopeType):
         return cls(value=datetime)
 
 
-class Bool(AntelopeType):
+class Bool(Primitive):
     value: bool
 
     def __bytes__(self):
@@ -85,7 +93,7 @@ class Bool(AntelopeType):
         return cls(value=int(bytes_[:1].hex(), 16))
 
 
-class String(AntelopeType):
+class String(Primitive):
     value: str
 
     def __bytes__(self):
@@ -114,7 +122,7 @@ class String(AntelopeType):
         return cls(value=value)
 
 
-class Asset(AntelopeType):
+class Asset(Primitive):
     """
     Serialize a Asset.
 
@@ -284,7 +292,7 @@ class Asset(AntelopeType):
         return v
 
 
-class Symbol(AntelopeType):
+class Symbol(Primitive):
     """
     Serialize a Symbol.
 
@@ -353,7 +361,7 @@ class Symbol(AntelopeType):
         return cls(value=value)
 
 
-class Bytes(AntelopeType):
+class Bytes(Primitive):
     value: bytes
 
     def __bytes__(self):
@@ -364,9 +372,13 @@ class Bytes(AntelopeType):
         return cls(value=bytes_)
 
 
-class Array(AntelopeType):
+class Array(Composte):
     values: tuple
     type_: type
+
+    @classmethod
+    def from_dict(self, d: List, /):
+        ...
 
     @pydantic.validator("type_")
     def must_be_subclass_of_antelope(cls, v):
@@ -374,12 +386,29 @@ class Array(AntelopeType):
             raise ValueError("Type must be subclass of AntelopeType")
         return v
 
+    @classmethod
+    def from_bytes(cls, bytes_, type_):
+        length = Varuint32.from_bytes(bytes_)
+        bytes_ = bytes_[len(length) :]  # NOQA: E203
+        values = []
+        for n in range(length.value):
+            value = type_.from_bytes(bytes_)
+            values.append(value.value)
+            bytes_ = bytes_[len(value) :]  # NOQA: E203
+        return cls(values=values, type_=type_)
+
     @pydantic.root_validator(pre=True)
     def all_must_satisfy_type_value(cls, all_values):
         type_ = all_values["type_"]
         values = all_values["values"]
         if len(values) >= 1:
-            values = tuple(type_(v) for v in values)
+            if issubclass(type_, Primitive):
+                values = tuple(type_(v) for v in values)
+            elif issubclass(type_, Composte):
+                values = tuple(type_.from_dict(v) for v in values)
+            else:
+                msg = f"Type {type(type_)} not supported."
+                raise TypeError(msg)
         else:
             values = tuple()
         all_values["values"] = values
@@ -393,22 +422,11 @@ class Array(AntelopeType):
             bytes_ += bytes(value)
         return bytes_
 
-    @classmethod
-    def from_bytes(cls, bytes_, type_):
-        length = Varuint32.from_bytes(bytes_)
-        bytes_ = bytes_[len(length) :]  # NOQA: E203
-        values = []
-        for n in range(length.value):
-            value = type_.from_bytes(bytes_)
-            values.append(value.value)
-            bytes_ = bytes_[len(value) :]  # NOQA: E203
-        return cls(values=values, type_=type_)
-
     def __getitem__(self, index):
         return Array(values=self.values[index], type_=self.type_)
 
 
-class Name(AntelopeType):
+class Name(Primitive):
     # regex = has at least one "non-dot" char
     value: pydantic.constr(
         max_length=13,
@@ -483,7 +501,7 @@ class Name(AntelopeType):
         return s
 
 
-class Int8(AntelopeType):
+class Int8(Primitive):
     value: pydantic.conint(ge=-128, lt=128)
 
     def __bytes__(self):
@@ -496,7 +514,7 @@ class Int8(AntelopeType):
         return cls(value=value)
 
 
-class Uint8(AntelopeType):
+class Uint8(Primitive):
     value: pydantic.conint(ge=0, lt=256)  # 2 ** 8
 
     def __bytes__(self):
@@ -509,7 +527,7 @@ class Uint8(AntelopeType):
         return cls(value=value)
 
 
-class Uint16(AntelopeType):
+class Uint16(Primitive):
     value: pydantic.conint(ge=0, lt=65536)  # 2 ** 16
 
     def __bytes__(self):
@@ -522,7 +540,7 @@ class Uint16(AntelopeType):
         return cls(value=value)
 
 
-class Uint32(AntelopeType):
+class Uint32(Primitive):
     value: pydantic.conint(ge=0, lt=4294967296)  # 2 ** 32
 
     def __bytes__(self):
@@ -535,7 +553,7 @@ class Uint32(AntelopeType):
         return cls(value=value)
 
 
-class Uint64(AntelopeType):
+class Uint64(Primitive):
     value: pydantic.conint(ge=0, lt=18446744073709551616)  # 2 ** 64
 
     def __bytes__(self):
@@ -548,7 +566,7 @@ class Uint64(AntelopeType):
         return cls(value=value)
 
 
-class Varuint32(AntelopeType):
+class Varuint32(Primitive):
     value: pydantic.conint(ge=0, le=20989371979)
 
     def __bytes__(self):
@@ -580,30 +598,54 @@ class Varuint32(AntelopeType):
         return cls(value=value)
 
 
-class AbiSchema(pydantic.BaseModel):
-    comment: str = None
-    version: str
-    types: List
-    structs: List
-    actions: List
-    tables: List
-    ricardian_clauses: List = None
-    abi_extensions: List = None
-    variants: List = None
-    action_results: List = None
-    kv_tables: dict = None
-    abi_extensions: List = None
+class Abi(Composte):
+    comment: String
+    version: String
+    types: Array
+    structs: Array
+    actions: Array
+    tables: Array
+    kv_tables: Array
+    ricardian_clauses: Array
+    variants: Array
+    action_results: Array
 
-    class Config:
-        extra = "forbid"
-        fields = {"comment": "____comment"}
+    @classmethod
+    def from_dict(cls, d: dict, /):
+        comment = String(d.get("____comment", ""))
+        version = String(d["version"])
+        types = Array(type_=String, values=d["types"])
+        structs = Array(type_=_AbiStructs, values=d["structs"])
+        structs = Array(type_=_AbiStructs, values=[])
+        actions = Array(type_=_AbiAction, values=d["actions"])
+        tables = Array(type_=_AbiTable, values=d["tables"])
+        kv_tables = Array(type_=String, values=[])
+        ricardian_clauses = Array(type_=String, values=[])
+        variants = Array(type_=String, values=[])
+        action_results = Array(type_=String, values=[])
+        o = cls(
+            comment=comment,
+            version=version,
+            types=types,
+            structs=structs,
+            actions=actions,
+            tables=tables,
+            kv_tables=kv_tables,
+            ricardian_clauses=ricardian_clauses,
+            variants=variants,
+            action_results=action_results,
+        )
+        return o
 
-
-class Abi(AntelopeType):
-    value: dict
+    @classmethod
+    def from_file(cls, file: Path, *, extension: str = ".abi"):
+        """Create a abi object from a .abi or from a zipped file."""
+        file_contents_bin = _load_bin_from_file(file=file, extension=extension)
+        file_contents_dict = json.loads(file_contents_bin)
+        abi_obj = cls.from_dict(file_contents_dict)
+        return abi_obj
 
     def import_abi_data(self, json_data):
-
         abi_dict = AbiSchema(**json_data)
 
         version = String(abi_dict.version)
@@ -617,7 +659,13 @@ class Abi(AntelopeType):
         for value in abi_dict.structs:
             struct_list.append(AbiStruct(value))
         for value in abi_dict.actions:
-            action_list.append(AbiAction(value))
+            action_list.append(
+                AbiAction(
+                    name=Name(value["name"]),
+                    type=String(value["type"]),
+                    ricardian_contract=String(value["ricardian_contract"]),
+                )
+            )
         for value in abi_dict.tables:
             table_list.append(AbiTable(value))
 
@@ -662,12 +710,6 @@ class Abi(AntelopeType):
 
         return abi_components
 
-    @classmethod
-    def from_file(cls, file: Path, *, extension: str = ".abi"):
-        """Create a abi object from a .abi or from a zipped file."""
-        file_contents = _load_bin_from_file(file=file, extension=extension)
-        return cls(value=json.loads(file_contents))
-
     def to_hex(self):
         abi_components = self.import_abi_data(self.value)
         abi_bytes = b""
@@ -684,84 +726,107 @@ class Abi(AntelopeType):
 
     @classmethod
     def from_bytes(cls, bytes_):
-        return cls(value=bytes_)
+        ...
 
 
-class AbiType(AntelopeType):
-    value: Dict[str, str]
+class _AbiStructsField(Composte):
+    name: String
+    type_: String
 
-    def __bytes__(self):
-        new_type_name = String(self.value["new_type_name"])
-        json_type = String(self.value["type"])
-        return bytes(new_type_name) + bytes(json_type)
+    @classmethod
+    def from_dict(cls, d: dict, /):
+        name = String(d["name"])
+        type_ = String(d["type"])
+        return cls(name=name, type_=type_)
 
     @classmethod
     def from_bytes(cls, bytes_):
-        return cls(value=bytes_)
-
-
-class AbiStruct(AntelopeType):
-    value: Dict[str, Any]
+        name = String.from_bytes(bytes_)
+        type_ = String.from_bytes(bytes_[len(name) :])  # NOQA: E203
+        return cls(name=name, type_=type_)
 
     def __bytes__(self):
-        name = String(self.value["name"])
-        base = String(self.value["base"])
-        field_bytes = []
-        for field in self.value["fields"]:
-            field_name = String(field["name"])
-            field_type = String(field["type"])
-            field_bytes.append(bytes(field_name) + bytes(field_type))
+        return bytes(self.name) + bytes(self.type_)
 
-        field_bytes_array = Array(type_=Bytes, values=field_bytes)
-        return bytes(name) + bytes(base) + bytes(field_bytes_array)
+
+class _AbiStructs(Composte):
+    name: String
+    base: String
+    fields: Array  # an array of _AbiStructsField
+
+    @classmethod
+    def from_dict(cls, d: dict, /):
+        name = String(d["name"])
+        base = String(d["base"])
+        fields = Array(values=d["fields"], type_=_AbiStructsField)
+        o = cls(name=name, base=base, fields=fields)
+        return o
 
     @classmethod
     def from_bytes(cls, bytes_):
-        return cls(value=bytes_)
-
-
-class AbiAction(AntelopeType):
-    value: Dict[str, str]
+        ...
 
     def __bytes__(self):
-        name = Name(self.value["name"])
-        json_type = String(self.value["type"])
-        ricardian_contract = String(self.value["ricardian_contract"])
+        ...
 
-        return bytes(name) + bytes(json_type) + bytes(ricardian_contract)
+
+class _AbiAction(Composte):
+    name: String
+    type_: String
+    ricardian_contract: String
 
     @classmethod
-    def from_bytes(cls, bytes_):
-        return cls(value=bytes_)
+    def from_dict(cls, d: dict, /):
+        name = String(d["name"])
+        type_ = String(d["type"])
+        ric_contract = String(d["ricardian_contract"])
+        o = cls(name=name, type_=type_, ricardian_contract=ric_contract)
+        return o
 
-
-class AbiTable(AntelopeType):
-    value: Dict[str, Any]
+    @classmethod
+    def from_bytes(self, bytes_):
+        ...
 
     def __bytes__(self):
-        name = Name(self.value["name"])
-        index_type = String(self.value["index_type"])
-        key_names = self.value["key_names"]
-        key_types = self.value["key_types"]
-        json_type = String(self.value["type"])
+        b = bytes(self.name) + bytes(self.type_)
+        b += bytes(self.ricardian_contract)
+        return b
 
-        key_names_array = Array(type_=String, values=key_names)
-        key_types_array = Array(type_=String, values=key_types)
 
-        return (
-            bytes(name)
-            + bytes(index_type)  # noqa: W503
-            + bytes(key_names_array)  # noqa: W503
-            + bytes(key_types_array)  # noqa: W503
-            + bytes(json_type)  # noqa: W503
+class _AbiTable(Composte):
+    name: Name
+    index_type: String
+    key_names: Array
+    key_types: Array
+    type_: String
+
+    @classmethod
+    def from_dict(cls, d: dict, /):
+        name = Name(d["name"])
+        index_type = String(d["index_type"])
+        key_names = Array(type_=String, values=[])
+        key_types = Array(type_=String, values=[])
+        type_ = String(d["type"])
+        o = cls(
+            name=name,
+            index_type=index_type,
+            key_names=key_names,
+            key_types=key_types,
+            type_=type_,
         )
+        return o
+
+    def __bytes__(self):
+        b = bytes(self.name) + bytes(self.index_type) + bytes(self.key_names)
+        b += bytes(self.key_types) + bytes(self.type_)
+        return b
 
     @classmethod
     def from_bytes(cls, bytes_):
-        return cls(value=bytes_)
+        ...
 
 
-class Wasm(AntelopeType):
+class Wasm(Primitive):
     value: bytes
 
     @classmethod
