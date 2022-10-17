@@ -121,14 +121,14 @@ values = [
 
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
-def test_type_bytes(class_, input_, expected_output):
+def test_type_object_to_bytes_serialization(class_, input_, expected_output):
     instance = class_(input_)
     output = bytes(instance)
     assert output == expected_output
 
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
-def test_bytes_to_type(class_, input_, expected_output):
+def test_type_bytes_to_object_deserialization(class_, input_, expected_output):
     if class_ is not types.Abi:
         instance = class_(input_)
         bytes_ = bytes(instance)
