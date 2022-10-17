@@ -108,11 +108,11 @@ values = [
     ),
     (
         types.Wasm,
-        types._load_bin_from_file(
+        types.compostes._load_bin_from_file(
             file="tests/unit/contracts/valid/hello.wasm",
             extension="",
         ),
-        types._load_bin_from_file(
+        types.compostes._load_bin_from_file(
             file="tests/unit/contracts/bin_files/wasm_pass_bytes.zip",
             extension=".bin",
         ),
@@ -363,7 +363,9 @@ def test_wasm_from_wasm_file_value_matches_expected_bytes():
 def test_wasm_from_file_equal_to_wasm_from_bytes():
     file_path = valid_contract.path_zip
     from_bytes = types.Wasm(
-        value=types._load_bin_from_file(file=file_path, extension=".wasm")
+        value=types.compostes._load_bin_from_file(
+            file=file_path, extension=".wasm"
+        )
     )
     from_file = types.Wasm.from_file(file_path)
     assert from_bytes == from_file
