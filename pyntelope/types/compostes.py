@@ -93,16 +93,18 @@ class Array(Composte):
 
 
 class Abi(Composte):
-    comment: primitives.String
     version: primitives.String
     types: Array
     structs: Array
     actions: Array
     tables: Array
-    kv_tables: Array
     ricardian_clauses: Array
+    error_messages: primitives.String
+    abi_extensions: primitives.String
     variants: Array
     action_results: Array
+    kv_tables: Array
+    comment: primitives.String
 
     @classmethod
     def from_dict(cls, d: dict, /):
@@ -115,19 +117,23 @@ class Abi(Composte):
         tables = Array(type_=_AbiTable, values=d["tables"])
         kv_tables = Array(type_=primitives.String, values=[])
         ricardian_clauses = Array(type_=primitives.String, values=[])
+        error_messages = primitives.String("")
+        abi_extensions = primitives.String("")
         variants = Array(type_=primitives.String, values=[])
         action_results = Array(type_=primitives.String, values=[])
         o = cls(
-            comment=comment,
             version=version,
             types=types,
             structs=structs,
             actions=actions,
             tables=tables,
-            kv_tables=kv_tables,
             ricardian_clauses=ricardian_clauses,
+            error_messages=error_messages,
+            abi_extensions=abi_extensions,
             variants=variants,
             action_results=action_results,
+            kv_tables=kv_tables,
+            comment=comment,
         )
         return o
 
@@ -139,87 +145,29 @@ class Abi(Composte):
         abi_obj = cls.from_dict(file_contents_dict)
         return abi_obj
 
-    def import_abi_data(self, json_data):
-        abi_dict = AbiSchema(**json_data)
-
-        version = primitives.String(abi_dict.version)
-        type_list = []
-        struct_list = []
-        action_list = []
-        table_list = []
-
-        for value in abi_dict.types:
-            type_list.append(AbiType(value))
-        for value in abi_dict.structs:
-            struct_list.append(AbiStruct(value))
-        for value in abi_dict.actions:
-            action_list.append(
-                AbiAction(
-                    name=primitives.Name(value["name"]),
-                    type=primitives.String(value["type"]),
-                    ricardian_contract=primitives.String(
-                        value["ricardian_contract"]
-                    ),
-                )
-            )
-        for value in abi_dict.tables:
-            table_list.append(AbiTable(value))
-
-        types = (
-            Array(type_=AbiType, values=type_list)
-            if type_list
-            else primitives.String("")
-        )
-        structs = (
-            Array(type_=AbiStruct, values=struct_list)
-            if struct_list
-            else primitives.String("")
-        )
-        actions = (
-            Array(type_=AbiAction, values=action_list)
-            if action_list
-            else primitives.String("")
-        )
-        tables = (
-            Array(type_=AbiTable, values=table_list)
-            if table_list
-            else primitives.String("")
-        )
-        ricardian_clauses = primitives.String("")
-        error_messages = primitives.String("")
-        abi_extensions = primitives.String("")
-        variants = primitives.String("")
-        action_results = primitives.String("")
-        kv_tables = primitives.String("")
-
-        abi_components = [
-            version,
-            types,
-            structs,
-            actions,
-            tables,
-            ricardian_clauses,
-            error_messages,
-            abi_extensions,
-            variants,
-            action_results,
-            kv_tables,
-        ]
-
-        return abi_components
-
     def to_hex(self):
-        abi_components = self.import_abi_data(self.value)
-        abi_bytes = b""
-        for value in abi_components:
-            abi_bytes += bytes(value)
-
-        return _bin_to_hex(abi_bytes)
+        attrs = [
+            self.version,
+            self.types,
+            self.structs,
+            self.actions,
+            self.tables,
+            self.ricardian_clauses,
+            self.error_messages,
+            self.abi_extensions,
+            self.variants,
+            self.action_results,
+            self.kv_tables,
+        ]
+        b = b""
+        for attr in attrs:
+            b += bytes(attr)
+        h = _bin_to_hex(b)
+        return h
 
     def __bytes__(self):
         hexcode = self.to_hex()
         uint8_array = _hex_to_uint8_array(hexcode)
-
         return bytes(uint8_array)
 
     @classmethod

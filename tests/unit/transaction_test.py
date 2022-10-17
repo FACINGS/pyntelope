@@ -155,16 +155,12 @@ def test_backend_set_wasm_code_transaction_serialization(net):
     assert backend_data_bytes == server_data_bytes
 
 
-@pytest.mark.skip
 def test_backend_set_abi_transaction_serialization(net):
     abi_obj = pyntelope.types.Abi.from_file(valid_contract.path_abi)
 
     data = [
         pyntelope.Data(name="account", value=pyntelope.types.Name("user2")),
-        pyntelope.Data(
-            name="abi",
-            value=pyntelope.types.Abi(abi_obj),
-        ),
+        pyntelope.Data(name="abi", value=abi_obj),
     ]
     backend_data_bytes = b""
     for d in data:
@@ -173,10 +169,7 @@ def test_backend_set_abi_transaction_serialization(net):
     server_resp = net.abi_json_to_bin(
         account_name="eosio",
         action="setabi",
-        json={
-            "account": "user2",
-            "abi": abi_obj.to_hex(),
-        },
+        json={"account": "user2", "abi": abi_obj.to_hex()},
     )
 
     server_data_bytes = server_resp
