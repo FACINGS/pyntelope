@@ -162,19 +162,17 @@ def test_backend_set_abi_transaction_serialization(net):
         pyntelope.Data(name="account", value=pyntelope.types.Name("user2")),
         pyntelope.Data(name="abi", value=abi_obj),
     ]
-    backend_data_bytes = b""
+    pyntelope_serialized_data = b""
     for d in data:
-        backend_data_bytes += bytes(d)
+        pyntelope_serialized_data += bytes(d)
 
-    server_resp = net.abi_json_to_bin(
+    leap_serialized_data = net.abi_json_to_bin(
         account_name="eosio",
         action="setabi",
         json={"account": "user2", "abi": abi_obj.to_hex()},
     )
 
-    server_data_bytes = server_resp
-
-    assert backend_data_bytes == server_data_bytes
+    assert leap_serialized_data == pyntelope_serialized_data
 
 
 def test_data_bytes_hex_return_expected_value():

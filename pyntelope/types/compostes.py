@@ -147,9 +147,9 @@ class Abi(Composte):
 
     def to_hex(self):
         attrs = [
-            self.version,
-            self.types,
-            self.structs,
+            # self.version,
+            # self.types,
+            # self.structs,
             self.actions,
             self.tables,
             self.ricardian_clauses,
