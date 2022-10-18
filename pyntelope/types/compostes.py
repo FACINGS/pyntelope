@@ -112,7 +112,6 @@ class Abi(Composte):
         version = primitives.String(d["version"])
         types = Array(type_=primitives.String, values=d["types"])
         structs = Array(type_=_AbiStructs, values=d["structs"])
-        structs = Array(type_=_AbiStructs, values=[])
         actions = Array(type_=_AbiAction, values=d["actions"])
         tables = Array(type_=_AbiTable, values=d["tables"])
         kv_tables = Array(type_=primitives.String, values=[])
@@ -147,9 +146,9 @@ class Abi(Composte):
 
     def to_hex(self):
         attrs = [
-            # self.version,
-            # self.types,
-            # self.structs,
+            self.version,
+            self.types,
+            self.structs,
             self.actions,
             self.tables,
             self.ricardian_clauses,
@@ -213,17 +212,17 @@ class _AbiStructs(Composte):
         ...
 
     def __bytes__(self):
-        ...
+        return bytes(self.name) + bytes(self.base) + bytes(self.fields)
 
 
 class _AbiAction(Composte):
-    name: primitives.String
+    name: primitives.Name
     type_: primitives.String
     ricardian_contract: primitives.String
 
     @classmethod
     def from_dict(cls, d: dict, /):
-        name = primitives.String(d["name"])
+        name = primitives.Name(d["name"])
         type_ = primitives.String(d["type"])
         ric_contract = primitives.String(d["ricardian_contract"])
         o = cls(name=name, type_=type_, ricardian_contract=ric_contract)

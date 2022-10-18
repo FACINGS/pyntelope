@@ -13,6 +13,7 @@ import pydantic
 
 from pyntelope import exc
 from pyntelope._version import __version__
+import base64
 
 
 class Net(pydantic.BaseModel):
@@ -74,6 +75,22 @@ class Net(pydantic.BaseModel):
         hex_ = data["binargs"]
         bytes_ = bytes.fromhex(hex_)
         return bytes_
+    
+    def get_raw_code_and_abi(
+        self, *, account_name: str
+    ) -> bytes:
+        """
+        Retrieves raw code and ABI for a contract based on account name
+
+        https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api-reference/index#operation/get_raw_code_and_abi
+        """
+        endpoint = "/v1/chain/get_raw_code_and_abi"
+        payload = dict({"account_name":account_name})
+        data = self._request(endpoint=endpoint, payload=payload)
+
+        data["abi"] = base64.b64decode(data["abi"])
+        data["wasm"] = base64.b64decode(data["wasm"])
+        return data
 
     def get_info(self):
         endpoint = "/v1/chain/get_info"
