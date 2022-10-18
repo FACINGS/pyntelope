@@ -9,7 +9,7 @@ import pytest
 import pyntelope
 
 from .contracts.valid import hello as valid_contract
-
+from .contracts.valid import eosio_token as eosio_token_contract
 
 def test_create_authorization_using_dict():
     auth = pyntelope.Authorization.parse_obj(
@@ -126,10 +126,9 @@ def test_backend_transfer_transaction_serialization(net):
     assert backend_data_bytes == server_data_bytes
 
 def test_backend_json_to_hex_abi_serialization(net):
-    abi_obj = pyntelope.types.Abi.from_file(valid_contract.path_abi)
+    abi_obj = pyntelope.types.Abi.from_file(eosio_token_contract.path_abi)
 
-    net = pyntelope.WaxTestnet()
-    server_resp = net.get_raw_code_and_abi(account_name="fossilia2225")
+    server_resp = net.get_raw_code_and_abi(account_name="eosio.token")
     server_abi = server_resp["abi"]
     server_abi_hex = pyntelope.types.compostes._bin_to_hex(server_abi)
 

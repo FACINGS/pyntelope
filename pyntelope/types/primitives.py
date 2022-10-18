@@ -300,16 +300,16 @@ class String(Primitive):
         bytes_ = bytes(Varuint32(value=length)) + bytes_
         return bytes_
 
-    @pydantic.validator("value")
-    def must_not_contain_multi_utf_char(cls, v):
-        if len(v) < len(v.encode("utf8")):
-            msg = (
-                f'Input "{v}" has a multi-byte utf character in it, '
-                "currently pyntelope does not support serialization of "
-                "multi-byte utf characters."
-            )
-            raise ValueError(msg)
-        return v
+    # @pydantic.validator("value")
+    # def must_not_contain_multi_utf_char(cls, v):
+    #     if len(v) < len(v.encode("utf8")):
+    #         msg = (
+    #             f'Input "{v}" has a multi-byte utf character in it, '
+    #             "currently pyntelope does not support serialization of "
+    #             "multi-byte utf characters."
+    #         )
+    #         raise ValueError(msg)
+    #     return v
 
     @classmethod
     def from_bytes(cls, bytes_):
