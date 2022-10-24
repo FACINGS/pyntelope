@@ -5,7 +5,7 @@ import binascii
 import json
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pydantic
 
@@ -93,33 +93,73 @@ class Array(Composte):
 
 
 class Abi(Composte):
+    comment: primitives.String
     version: primitives.String
     types: Array
     structs: Array
     actions: Array
     tables: Array
     ricardian_clauses: Array
-    error_messages: primitives.String
-    abi_extensions: primitives.String
-    variants: Array
-    action_results: Array
-    kv_tables: Array
-    comment: primitives.String
+    error_messages: Array
+    abi_extensions: Array
+    variants: Optional[Array]
+    action_results: Optional[Array]
+    kv_tables: Optional[Array]
 
     @classmethod
     def from_dict(cls, d: dict, /):
         comment = primitives.String(d.get("____comment", ""))
         version = primitives.String(d["version"])
-        types = Array(type_=primitives.String, values=d["types"])
-        structs = Array(type_=_AbiStructs, values=d["structs"])
-        actions = Array(type_=_AbiAction, values=d["actions"])
-        tables = Array(type_=_AbiTable, values=d["tables"])
-        kv_tables = Array(type_=primitives.String, values=[])
-        ricardian_clauses = Array(type_=primitives.String, values=[])
-        error_messages = primitives.String("")
-        abi_extensions = primitives.String("")
-        variants = Array(type_=primitives.String, values=[])
-        action_results = Array(type_=primitives.String, values=[])
+        types = (
+            Array(type_=_AbiType, values=d["types"])
+            if "types" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        structs = (
+            Array(type_=_AbiStruct, values=d["structs"])
+            if "structs" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        actions = (
+            Array(type_=_AbiAction, values=d["actions"])
+            if "actions" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        tables = (
+            Array(type_=_AbiTable, values=d["tables"])
+            if "tables" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        ricardian_clauses = (
+            Array(type_=primitives.String, values=[])
+            if "ricardian_clauses" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        error_messages = (
+            Array(type_=primitives.String, values=d["error_messages"])
+            if "error_messages" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        abi_extensions = (
+            Array(type_=primitives.String, values=d["abi_extensions"])
+            if "abi_extensions" in d
+            else Array(type_=primitives.String, values=[])
+        )
+        variants = (
+            Array(type_=primitives.String, values=d["variants"])
+            if "variants" in d
+            else None
+        )
+        action_results = (
+            Array(type_=primitives.String, values=d["action_results"])
+            if "action_results" in d
+            else None
+        )
+        kv_tables = (
+            Array(type_=primitives.String, values=d["kv_tables"])
+            if "kv_tables" in d
+            else None
+        )
         o = cls(
             version=version,
             types=types,
@@ -154,10 +194,14 @@ class Abi(Composte):
             self.ricardian_clauses,
             self.error_messages,
             self.abi_extensions,
-            self.variants,
-            self.action_results,
-            self.kv_tables,
         ]
+        if self.variants is not None:
+            attrs.append(self.variants)
+        if self.action_results is not None:
+            attrs.append(self.action_results)
+        if self.kv_tables is not None:
+            attrs.append(self.kv_tables)
+
         b = b""
         for attr in attrs:
             b += bytes(attr)
@@ -172,6 +216,25 @@ class Abi(Composte):
     @classmethod
     def from_bytes(cls, bytes_):
         ...
+
+
+class _AbiType(Composte):
+    new_type_name: primitives.String
+    json_type: primitives.String
+
+    @classmethod
+    def from_dict(cls, d: dict, /):
+        new_type_name = primitives.String(d["new_type_name"])
+        json_type = primitives.String(d["type"])
+        o = cls(new_type_name=new_type_name, json_type=json_type)
+        return o
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        ...
+
+    def __bytes__(self):
+        return bytes(self.new_type_name) + bytes(self.json_type)
 
 
 class _AbiStructsField(Composte):
@@ -194,7 +257,7 @@ class _AbiStructsField(Composte):
         return bytes(self.name) + bytes(self.type_)
 
 
-class _AbiStructs(Composte):
+class _AbiStruct(Composte):
     name: primitives.String
     base: primitives.String
     fields: Array  # an array of _AbiStructsField
