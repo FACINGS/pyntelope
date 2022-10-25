@@ -11,7 +11,7 @@ import pytest
 from pyntelope import types
 
 from .contracts.valid import eosio_token
-from .contracts.valid import hello as valid_contract
+from .contracts.valid import simplecontract as valid_contract
 
 
 def load_dict_from_path(path: str):
