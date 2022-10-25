@@ -93,6 +93,7 @@ class Array(Composte):
 
 
 class Abi(Composte):
+    abi_dict: dict
     comment: primitives.String
     version: primitives.String
     types: Array
@@ -108,6 +109,7 @@ class Abi(Composte):
 
     @classmethod
     def from_dict(cls, d: dict, /):
+        abi_dict = d
         comment = primitives.String(d.get("____comment", ""))
         version = primitives.String(d["version"])
         types = (
@@ -161,6 +163,7 @@ class Abi(Composte):
             else None
         )
         o = cls(
+            abi_dict=abi_dict,
             version=version,
             types=types,
             structs=structs,
@@ -207,6 +210,9 @@ class Abi(Composte):
             b += bytes(attr)
         h = _bin_to_hex(b)
         return h
+
+    def get_dict(self):
+        return self.abi_dict
 
     def __bytes__(self):
         hexcode = self.to_hex()

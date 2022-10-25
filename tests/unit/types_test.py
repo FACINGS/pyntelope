@@ -106,17 +106,6 @@ values = [
         "99 WAX",
         b"c\x00\x00\x00\x00\x00\x00\x00\x00WAX\x00\x00\x00\x00",
     ),
-    (
-        types.Wasm,
-        types.compostes._load_bin_from_file(
-            file="tests/unit/contracts/valid/hello.wasm",
-            extension="",
-        ),
-        types.compostes._load_bin_from_file(
-            file="tests/unit/contracts/bin_files/wasm_pass_bytes.zip",
-            extension=".bin",
-        ),
-    ),
 ]
 
 
@@ -129,11 +118,10 @@ def test_type_object_to_bytes_serialization(class_, input_, expected_output):
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
 def test_type_bytes_to_object_deserialization(class_, input_, expected_output):
-    if class_ is not types.Abi:
-        instance = class_(input_)
-        bytes_ = bytes(instance)
-        new_instance = class_.from_bytes(bytes_)
-        assert new_instance == instance
+    instance = class_(input_)
+    bytes_ = bytes(instance)
+    new_instance = class_.from_bytes(bytes_)
+    assert new_instance == instance
 
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
@@ -146,6 +134,28 @@ def test_size(class_, input_, expected_output):
         instance = class_(input_)
         bytes_ = bytes(instance)
         assert len(instance) == len(bytes_)
+
+
+def test_abi_bytes_to_type_serialization():
+    abi_path = valid_contract.path_abi
+    bin_path = valid_contract.path_abi_bytes
+
+    abi_obj = types.Abi.from_file(file=abi_path)
+    output = bytes(abi_obj)
+    expected_output = types.compostes._load_bin_from_file(file=bin_path, extension="")
+
+    assert output == expected_output
+
+
+def test_wasm_bytes_to_type_serialization():
+    wasm_path = valid_contract.path_wasm
+    bin_path = valid_contract.path_wasm_bytes
+
+    wasm_obj = types.Wasm.from_file(file=wasm_path)
+    output = bytes(wasm_obj)
+    expected_output = types.compostes._load_bin_from_file(file=bin_path, extension=".bin")
+
+    assert output == expected_output
 
 
 test_serialization = [
@@ -416,7 +426,6 @@ def test_abi_from_file_has_comment():
     assert hasattr(abi_obj, "comment")
 
 
-"""
 def test_abi_from_bi_file_return_abi_type():
     path = valid_contract.path_abi
     abi_obj = types.Abi.from_file(file=path)
@@ -426,14 +435,14 @@ def test_abi_from_bi_file_return_abi_type():
 def test_abi_from_abi_file_value_matches_expected_dict():
     path = valid_contract.path_abi
     abi_obj = types.Abi.from_file(file=path)
-    assert abi_obj.value == valid_contract.abi_dict_
+    assert abi_obj.get_dict() == valid_contract.abi_dict_
 
 
-def test_abi_from_file_equal_to_abi_from_bytes():
+def test_abi_from_dict_equal_to_abi_from_file():
     file_path = valid_contract.path_abi
-    from_bytes = types.Abi(value=load_dict_from_path(file_path))
+    from_dict = types.Abi.from_dict(load_dict_from_path(file_path))
     from_file = types.Abi.from_file(file_path)
-    assert from_bytes == from_file
+    assert from_dict == from_file
 
 
 def test_abi_from_file_with_string_and_fullpath_returns_abi_object():
@@ -447,4 +456,4 @@ def test_abi_from_file_with_string_and_relative_path_returns_abi_object():
     path = str(valid_contract.path_abi.relative_to(local_path))
     abi_obj = types.Abi.from_file(file=path)
     assert isinstance(abi_obj, types.Abi)
-"""
+

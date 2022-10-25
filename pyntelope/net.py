@@ -5,6 +5,7 @@ Nodeos api reference:
 https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api-reference/index
 """
 
+import base64
 import typing
 from urllib.parse import urljoin
 
@@ -13,7 +14,6 @@ import pydantic
 
 from pyntelope import exc
 from pyntelope._version import __version__
-import base64
 
 
 class Net(pydantic.BaseModel):
@@ -78,7 +78,7 @@ class Net(pydantic.BaseModel):
 
     def get_raw_code_and_abi(self, *, account_name: str) -> bytes:
         """
-        Retrieves raw code and ABI for a contract based on account name
+        Retrieve raw code and ABI for a contract based on account name.
 
         https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api-reference/index#operation/get_raw_code_and_abi
         """
