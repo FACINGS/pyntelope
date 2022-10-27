@@ -211,7 +211,7 @@ class Abi(Composte):
         h = _bin_to_hex(b)
         return h
 
-    def get_dict(self):
+    def dict(self):
         return self.abi_dict
 
     def __bytes__(self):
