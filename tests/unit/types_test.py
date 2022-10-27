@@ -432,12 +432,6 @@ def test_abi_from_bi_file_return_abi_type():
     assert isinstance(abi_obj, types.Abi)
 
 
-def test_abi_from_abi_file_value_matches_expected_dict():
-    path = valid_contract.path_abi
-    abi_obj = types.Abi.from_file(file=path)
-    assert abi_obj.dict() == valid_contract.abi_dict_
-
-
 def test_abi_from_dict_equal_to_abi_from_file():
     file_path = valid_contract.path_abi
     from_dict = types.Abi.from_dict(load_dict_from_path(file_path))
