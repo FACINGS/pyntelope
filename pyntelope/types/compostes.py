@@ -107,43 +107,19 @@ class Abi(Composte):
     kv_tables: Optional[Array]
 
     @classmethod
-    def from_dict(cls, d: dict, /):
+    def from_dict(cls, /, d: dict):
         comment = primitives.String(d.get("____comment", ""))
         version = primitives.String(d["version"])
-        types = (
-            Array(type_=_AbiType, values=d["types"])
-            if "types" in d
-            else Array(type_=primitives.String, values=[])
+        types = Array(type_=_AbiType, values=d.get("types", []))
+        structs = Array(type_=_AbiStruct, values=d.get("structs", []))
+        actions = Array(type_=_AbiAction, values=d.get("actions", []))
+        tables = Array(type_=_AbiTable, values=d.get("tables", []))
+        ricardian_clauses = Array(type_=primitives.String, values=[])
+        error_messages = Array(
+            type_=primitives.String, values=d.get("error_messages", [])
         )
-        structs = (
-            Array(type_=_AbiStruct, values=d["structs"])
-            if "structs" in d
-            else Array(type_=primitives.String, values=[])
-        )
-        actions = (
-            Array(type_=_AbiAction, values=d["actions"])
-            if "actions" in d
-            else Array(type_=primitives.String, values=[])
-        )
-        tables = (
-            Array(type_=_AbiTable, values=d["tables"])
-            if "tables" in d
-            else Array(type_=primitives.String, values=[])
-        )
-        ricardian_clauses = (
-            Array(type_=primitives.String, values=[])
-            if "ricardian_clauses" in d
-            else Array(type_=primitives.String, values=[])
-        )
-        error_messages = (
-            Array(type_=primitives.String, values=d["error_messages"])
-            if "error_messages" in d
-            else Array(type_=primitives.String, values=[])
-        )
-        abi_extensions = (
-            Array(type_=primitives.String, values=d["abi_extensions"])
-            if "abi_extensions" in d
-            else Array(type_=primitives.String, values=[])
+        abi_extensions = Array(
+            type_=primitives.String, values=d.get("abi_extensions", [])
         )
         variants = (
             Array(type_=primitives.String, values=d["variants"])
