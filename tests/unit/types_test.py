@@ -1,8 +1,8 @@
 """type tests."""
 
 import datetime as dt
+import json
 import os
-import zipfile
 from pathlib import Path
 
 import pydantic
@@ -10,21 +10,14 @@ import pytest
 
 from pyntelope import types
 
-from .contracts.valid import hello as valid_contract
+from .contracts.valid import eosio_token
+from .contracts.valid import simplecontract as valid_contract
 
 
-def load_bin_from_path(path: str, zip_extension=".wasm"):
+def load_dict_from_path(path: str):
     filename = Path().resolve() / Path(path)
-
-    if filename.suffix == ".zip":
-        with zipfile.ZipFile(filename) as thezip:
-            with thezip.open(
-                str(filename.stem) + zip_extension, mode="r"
-            ) as f:
-                return f.read()
-    else:
-        with open(filename, "rb") as f:
-            return f.read()
+    with open(filename, "rb") as f:
+        return json.load(f)
 
 
 values = [
@@ -113,26 +106,18 @@ values = [
         "99 WAX",
         b"c\x00\x00\x00\x00\x00\x00\x00\x00WAX\x00\x00\x00\x00",
     ),
-    (
-        types.Wasm,
-        load_bin_from_path("tests/unit/contracts/valid/hello.wasm"),
-        load_bin_from_path(
-            "tests/unit/contracts/bin_files/wasm_pass_bytes.zip",
-            ".bin",
-        ),
-    ),
 ]
 
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
-def test_type_bytes(class_, input_, expected_output):
+def test_type_object_to_bytes_serialization(class_, input_, expected_output):
     instance = class_(input_)
     output = bytes(instance)
     assert output == expected_output
 
 
 @pytest.mark.parametrize("class_,input_,expected_output", values)
-def test_bytes_to_type(class_, input_, expected_output):
+def test_type_bytes_to_object_deserialization(class_, input_, expected_output):
     instance = class_(input_)
     bytes_ = bytes(instance)
     new_instance = class_.from_bytes(bytes_)
@@ -149,6 +134,28 @@ def test_size(class_, input_, expected_output):
         instance = class_(input_)
         bytes_ = bytes(instance)
         assert len(instance) == len(bytes_)
+
+
+def test_abi_bytes_to_type_serialization():
+    abi_path = valid_contract.path_abi
+    bin_path = valid_contract.path_abi_bytes
+
+    abi_obj = types.Abi.from_file(file=abi_path)
+    output = bytes(abi_obj)
+    expected_output = types.compostes._load_bin_from_file(file=bin_path, extension="")
+
+    assert output == expected_output
+
+
+def test_wasm_bytes_to_type_serialization():
+    wasm_path = valid_contract.path_wasm
+    bin_path = valid_contract.path_wasm_bytes
+
+    wasm_obj = types.Wasm.from_file(file=wasm_path)
+    output = bytes(wasm_obj)
+    expected_output = types.compostes._load_bin_from_file(file=bin_path, extension=".bin")
+
+    assert output == expected_output
 
 
 test_serialization = [
@@ -354,18 +361,22 @@ def test_wasm_from_wasm_file_return_wasm_type():
 def test_wasm_from_zip_file_value_matches_expected_bytes():
     path = valid_contract.path_zip
     wasm_obj = types.Wasm.from_file(file=path)
-    assert wasm_obj.value == valid_contract.bytes_
+    assert wasm_obj.value == valid_contract.wasm_bytes_
 
 
 def test_wasm_from_wasm_file_value_matches_expected_bytes():
     path = valid_contract.path_wasm
     wasm_obj = types.Wasm.from_file(file=path)
-    assert wasm_obj.value == valid_contract.bytes_
+    assert wasm_obj.value == valid_contract.wasm_bytes_
 
 
 def test_wasm_from_file_equal_to_wasm_from_bytes():
     file_path = valid_contract.path_zip
-    from_bytes = types.Wasm(value=load_bin_from_path(file_path))
+    from_bytes = types.Wasm(
+        value=types.compostes._load_bin_from_file(
+            file=file_path, extension=".wasm"
+        )
+    )
     from_file = types.Wasm.from_file(file_path)
     assert from_bytes == from_file
 
@@ -381,3 +392,62 @@ def test_wasm_from_file_with_string_and_relative_path_returns_wasm_object():
     path = str(valid_contract.path_zip.relative_to(local_path))
     wasm_obj = types.Wasm.from_file(file=path)
     assert isinstance(wasm_obj, types.Wasm)
+
+
+def test_abi_from_dict_returns_abi_object():
+    d = {
+        "____comment": "This file",
+        "version": "eosio::abi/1.2",
+        "types": [],
+        "structs": [],
+        "actions": [],
+        "tables": [],
+        "kv_tables": {},
+        "ricardian_clauses": [],
+        "variants": [],
+        "action_results": [],
+    }
+    abi_obj = types.Abi.from_dict(d)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_hello_file_return_abi_object():
+    abi_obj = types.Abi.from_file(valid_contract.path_abi)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_eosio_token_file_return_abi_object():
+    abi_obj = types.Abi.from_file(eosio_token.path_abi)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_file_has_comment():
+    abi_obj = types.Abi.from_file(valid_contract.path_abi)
+    assert hasattr(abi_obj, "comment")
+
+
+def test_abi_from_bi_file_return_abi_type():
+    path = valid_contract.path_abi
+    abi_obj = types.Abi.from_file(file=path)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_dict_equal_to_abi_from_file():
+    file_path = valid_contract.path_abi
+    from_dict = types.Abi.from_dict(load_dict_from_path(file_path))
+    from_file = types.Abi.from_file(file_path)
+    assert from_dict == from_file
+
+
+def test_abi_from_file_with_string_and_fullpath_returns_abi_object():
+    path = str(valid_contract.path_abi.absolute())
+    abi_obj = types.Abi.from_file(file=path)
+    assert isinstance(abi_obj, types.Abi)
+
+
+def test_abi_from_file_with_string_and_relative_path_returns_abi_object():
+    local_path = os.getcwd()
+    path = str(valid_contract.path_abi.relative_to(local_path))
+    abi_obj = types.Abi.from_file(file=path)
+    assert isinstance(abi_obj, types.Abi)
+
