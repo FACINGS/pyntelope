@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyntelope"
-version = "0.1.0"
+version = "0.6.4"
 description = "Interact with Antelope blockchains"
 authors = ["Team <pyntelope@facings.io>"]
 homepage = "https://github.com/FACINGS/pyntelope"
