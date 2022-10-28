@@ -22,6 +22,7 @@ class Net(pydantic.BaseModel):
     """  # NOQA: D200
 
     host: pydantic.AnyHttpUrl
+    headers: dict = {}
 
     def _request(
         self,
@@ -31,7 +32,9 @@ class Net(pydantic.BaseModel):
         verb: str = "POST",
     ):
         url = urljoin(self.host, endpoint)
+
         headers = {"user-agent": f"pyntelope/{__version__}"}
+        headers.update(self.headers)
 
         try:
             resp = httpx.post(url, json=payload, headers=headers)

@@ -257,13 +257,63 @@ def test_get_table_rows_from_non_existing_account_returns_error(net):
     assert resp["code"] == 500
 
 
-def get_table_rows_with_strange_bounds_returns_empty_list(net):
+def test_get_table_rows_with_strange_bounds_returns_empty_list(net):
     resp = net.get_table_rows(
         code="user2", table="messages", scope="user2", lower_bound="zzzzzz"
     )
     assert resp == []
 
 
-def get_table_rows_with_strange_scope_returns_empty_list(net):
+def test_get_table_rows_with_strange_scope_returns_empty_list(net):
     resp = net.get_table_rows(code="user2", table="messages", scope="user1")
     assert resp == []
+
+
+def test_get_info_request_headers_include_pyntelope_user_agent(
+    net, httpx_mock
+):
+    httpx_mock.add_response(json={}, status_code=200)
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+    assert "pyntelope" in headers["user-agent"].lower()
+
+
+def test_get_info_request_headers_include_main_headers(net, httpx_mock):
+    httpx_mock.add_response(json={}, status_code=200)
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+    main_headers = [
+        "host",
+        "accept",
+        "accept-encoding",
+        "connection",
+        "user-agent",
+        "content-length",
+        "content-type",
+    ]
+    for header in main_headers:
+        assert header in headers
+
+
+def test_given_net_with_specific_header_then_use_specific_header(httpx_mock):
+    httpx_mock.add_response(json={}, status_code=200)
+    custom_headers = {"user-agent": "aaa", "x-bbb": "ccc"}
+    net = pyntelope.Local(headers=custom_headers)
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+    assert headers["x-bbb"] == "ccc"
+
+
+def test_given_net_with_specific_header_then_user_agent_is_overwritten(
+    httpx_mock,
+):
+    httpx_mock.add_response(json={}, status_code=200)
+    custom_headers = {"user-agent": "aaa", "x-bbb": "ccc"}
+    net = pyntelope.Local(headers=custom_headers)
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+    assert headers["user-agent"] == "aaa"
