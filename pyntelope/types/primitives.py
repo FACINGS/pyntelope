@@ -1,118 +1,17 @@
-"""Antelope data types."""
+"""Antelope concrete primitive types."""
 
-import binascii
+
 import calendar
 import datetime as dt
 import re
 import struct
-import sys
-import zipfile
-from abc import ABC, abstractmethod
-from pathlib import Path
 
 import pydantic
 
-
-class AntelopeType(pydantic.BaseModel, ABC):
-    def __init__(self, *args, **kwargs):
-        if len(args) == 1 and len(kwargs) == 0:
-            super().__init__(value=args[0])
-        else:
-            super().__init__(*args, **kwargs)
-
-    @pydantic.validator("value", pre=True, check_fields=False)
-    def check_if_same_type(cls, v):
-        if type(v) is cls:
-            return v.value
-        return v
-
-    @abstractmethod
-    def __bytes__(self):
-        """Convert instance to bytes."""
-
-    @abstractmethod
-    def from_bytes(self):
-        """Create instance from bytes."""
-
-    def __len__(self):
-        """Lenght of value in bytes."""
-        bytes_ = bytes(self)
-        return len(bytes_)
-
-    class Config:
-        extra = "forbid"
-        frozen = True
+from .base import Primitive
 
 
-class UnixTimestamp(AntelopeType):
-    """
-    Serialize a datetime.
-
-    Precision is in seconds
-    Considers UTC time
-    """
-
-    value: dt.datetime
-
-    @pydantic.validator("value")
-    def remove_everything_bellow_seconds(cls, v):
-        new_v = v.replace(microsecond=0)
-        return new_v
-
-    def __bytes__(self):
-        unix_secs = calendar.timegm(self.value.timetuple())
-        uint32_secs = Uint32(value=unix_secs)
-        bytes_ = bytes(uint32_secs)
-        return bytes_
-
-    @classmethod
-    def from_bytes(cls, bytes_):
-        uint32_secs = Uint32.from_bytes(bytes_)
-        datetime = dt.datetime.utcfromtimestamp(uint32_secs.value)
-        return cls(value=datetime)
-
-
-class Bool(AntelopeType):
-    value: bool
-
-    def __bytes__(self):
-        return b"\x01" if self.value else b"\x00"
-
-    @classmethod
-    def from_bytes(cls, bytes_):
-        return cls(value=int(bytes_[:1].hex(), 16))
-
-
-class String(AntelopeType):
-    value: str
-
-    def __bytes__(self):
-        bytes_ = self.value.encode("utf8")
-        length = len(bytes_)
-        bytes_ = bytes(Varuint32(value=length)) + bytes_
-        return bytes_
-
-    @pydantic.validator("value")
-    def must_not_contain_multi_utf_char(cls, v):
-        if len(v) < len(v.encode("utf8")):
-            msg = (
-                f'Input "{v}" has a multi-byte utf character in it, '
-                "currently pyntelope does not support serialization of "
-                "multi-byte utf characters."
-            )
-            raise ValueError(msg)
-        return v
-
-    @classmethod
-    def from_bytes(cls, bytes_):
-        size = Varuint32.from_bytes(bytes_)
-        start = len(size)
-        string_bytes = bytes_[start : start + size.value]  # NOQA: E203
-        value = string_bytes.decode("utf8")
-        return cls(value=value)
-
-
-class Asset(AntelopeType):
+class Asset(Primitive):
     """
     Serialize a Asset.
 
@@ -282,76 +181,18 @@ class Asset(AntelopeType):
         return v
 
 
-class Symbol(AntelopeType):
-    """
-    Serialize a Symbol.
-
-    serializes a percision and currency name together
-    precision is used to indicate how many decimals there
-    are in an Asset type amount
-    precision and name are seperated by a commma
-    example: 1,WAX
-    """
-
-    value: str
-
-    @pydantic.validator("value", allow_reuse=True)
-    def name_must_be_of_valid_length(cls, v):
-        name = v.split(",")[1]
-        match = re.search("^[A-Z]{1,7}$", name)
-        if not match:
-            msg = f'Input "{name}" must be A-Z and between 1 to 7 characters.'
-            raise ValueError(msg)
-        return v
-
-    @pydantic.validator("value", allow_reuse=True)
-    def precision_must_be_in_the_valid_range(cls, v):
-        precision = int(v.split(",")[0])
-        if precision < 0 or precision > 16:
-            msg = (
-                f'precision "{precision}" must be between 0 and '
-                "16 inclusive."
-            )
-            raise ValueError(msg)
-        return v
+class Bool(Primitive):
+    value: bool
 
     def __bytes__(self):
-        precision = int(self.value.split(",")[0])
-        precision_bytes_ = struct.pack("<B", (precision & 0xFF))
-        bytes_ = precision_bytes_
-        name = self.value.split(",")[1]
-        name_bytes_ = name.encode("utf8")
-        bytes_ += name_bytes_
-        leftover_byte_space = len(name) + 1
-        while (
-            leftover_byte_space < 8
-        ):  # add null bytes in remaining empty space
-            bytes_ += struct.pack("<B", 0)
-            leftover_byte_space += 1
-        return bytes_
+        return b"\x01" if self.value else b"\x00"
 
     @classmethod
     def from_bytes(cls, bytes_):
-        bytes_len = len(bytes_)
-        precision = ""
-        name = ""
-        for i in range(bytes_len):
-            if chr(bytes_[i]).isupper():
-                precision = str(bytes_[0])
-                name_bytes = bytes_[i:]  # name is all bytes after precision
-                for k in range(1, len(name_bytes) + 1):
-                    if not chr(bytes_[k]).isupper():
-                        name_bytes = name_bytes[
-                            : k - 1
-                        ]  # name only goes up to the last upper case character
-                name = name_bytes.decode("utf8")
-                break
-
-        value = precision + "," + name
-        return cls(value=value)
+        return cls(value=int(bytes_[:1].hex(), 16))
 
 
-class Bytes(AntelopeType):
+class Bytes(Primitive):
     value: bytes
 
     def __bytes__(self):
@@ -362,51 +203,20 @@ class Bytes(AntelopeType):
         return cls(value=bytes_)
 
 
-class Array(AntelopeType):
-    values: tuple
-    type_: type
-
-    @pydantic.validator("type_")
-    def must_be_subclass_of_antelope(cls, v):
-        if not issubclass(v, AntelopeType):
-            raise ValueError("Type must be subclass of AntelopeType")
-        return v
-
-    @pydantic.root_validator(pre=True)
-    def all_must_satisfy_type_value(cls, all_values):
-        type_ = all_values["type_"]
-        values = all_values["values"]
-        if len(values) >= 1:
-            values = tuple(type_(v) for v in values)
-        else:
-            values = tuple()
-        all_values["values"] = values
-        return all_values
+class Int8(Primitive):
+    value: pydantic.conint(ge=-128, lt=128)
 
     def __bytes__(self):
-        bytes_ = b""
-        length = Varuint32(len(self.values))
-        bytes_ += bytes(length)
-        for value in self.values:
-            bytes_ += bytes(value)
-        return bytes_
+        return struct.pack("<b", self.value)
 
     @classmethod
-    def from_bytes(cls, bytes_, type_):
-        length = Varuint32.from_bytes(bytes_)
-        bytes_ = bytes_[len(length) :]  # NOQA: E203
-        values = []
-        for n in range(length.value):
-            value = type_.from_bytes(bytes_)
-            values.append(value.value)
-            bytes_ = bytes_[len(value) :]  # NOQA: E203
-        return cls(values=values, type_=type_)
-
-    def __getitem__(self, index):
-        return Array(values=self.values[index], type_=self.type_)
+    def from_bytes(cls, bytes_):
+        struct_tuple = struct.unpack("<b", bytes_[:1])
+        value = struct_tuple[0]
+        return cls(value=value)
 
 
-class Name(AntelopeType):
+class Name(Primitive):
     # regex = has at least one "non-dot" char
     value: pydantic.constr(
         max_length=13,
@@ -481,20 +291,105 @@ class Name(AntelopeType):
         return s
 
 
-class Int8(AntelopeType):
-    value: pydantic.conint(ge=-128, lt=128)
+class String(Primitive):
+    value: str
 
     def __bytes__(self):
-        return struct.pack("<b", self.value)
+        bytes_ = self.value.encode("utf8")
+        length = len(bytes_)
+        bytes_ = bytes(Varuint32(value=length)) + bytes_
+        return bytes_
+
+    @pydantic.validator("value")
+    def must_not_contain_multi_utf_char(cls, v):
+        if len(v) < len(v.encode("utf8")):
+            msg = (
+                f'Input "{v}" has a multi-byte utf character in it, '
+                "currently pyntelope does not support serialization of "
+                "multi-byte utf characters."
+            )
+            raise ValueError(msg)
+        return v
 
     @classmethod
     def from_bytes(cls, bytes_):
-        struct_tuple = struct.unpack("<b", bytes_[:1])
-        value = struct_tuple[0]
+        size = Varuint32.from_bytes(bytes_)
+        start = len(size)
+        string_bytes = bytes_[start : start + size.value]  # NOQA: E203
+        value = string_bytes.decode("utf8")
         return cls(value=value)
 
 
-class Uint8(AntelopeType):
+class Symbol(Primitive):
+    """
+    Serialize a Symbol.
+
+    serializes a percision and currency name together
+    precision is used to indicate how many decimals there
+    are in an Asset type amount
+    precision and name are seperated by a commma
+    example: 1,WAX
+    """
+
+    value: str
+
+    @pydantic.validator("value", allow_reuse=True)
+    def name_must_be_of_valid_length(cls, v):
+        name = v.split(",")[1]
+        match = re.search("^[A-Z]{1,7}$", name)
+        if not match:
+            msg = f'Input "{name}" must be A-Z and between 1 to 7 characters.'
+            raise ValueError(msg)
+        return v
+
+    @pydantic.validator("value", allow_reuse=True)
+    def precision_must_be_in_the_valid_range(cls, v):
+        precision = int(v.split(",")[0])
+        if precision < 0 or precision > 16:
+            msg = (
+                f'precision "{precision}" must be between 0 and '
+                "16 inclusive."
+            )
+            raise ValueError(msg)
+        return v
+
+    def __bytes__(self):
+        precision = int(self.value.split(",")[0])
+        precision_bytes_ = struct.pack("<B", (precision & 0xFF))
+        bytes_ = precision_bytes_
+        name = self.value.split(",")[1]
+        name_bytes_ = name.encode("utf8")
+        bytes_ += name_bytes_
+        leftover_byte_space = len(name) + 1
+        while (
+            leftover_byte_space < 8
+        ):  # add null bytes in remaining empty space
+            bytes_ += struct.pack("<B", 0)
+            leftover_byte_space += 1
+        return bytes_
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        bytes_len = len(bytes_)
+        precision = ""
+        name = ""
+        for i in range(bytes_len):
+            if chr(bytes_[i]).isupper():
+                precision = str(bytes_[0])
+                name_bytes = bytes_[i:]  # name is all bytes after precision
+                for k in range(1, len(name_bytes) + 1):
+                    if not chr(bytes_[k]).isupper():
+                        name_bytes = name_bytes[
+                            : k - 1
+                        ]  # name only goes up to the last upper case character
+                name = name_bytes.decode("utf8")
+                break
+
+        value = precision + "," + name
+        return cls(value=value)
+
+
+class Uint8(Primitive):
     value: pydantic.conint(ge=0, lt=256)  # 2 ** 8
 
     def __bytes__(self):
@@ -507,7 +402,7 @@ class Uint8(AntelopeType):
         return cls(value=value)
 
 
-class Uint16(AntelopeType):
+class Uint16(Primitive):
     value: pydantic.conint(ge=0, lt=65536)  # 2 ** 16
 
     def __bytes__(self):
@@ -520,7 +415,7 @@ class Uint16(AntelopeType):
         return cls(value=value)
 
 
-class Uint32(AntelopeType):
+class Uint32(Primitive):
     value: pydantic.conint(ge=0, lt=4294967296)  # 2 ** 32
 
     def __bytes__(self):
@@ -533,7 +428,7 @@ class Uint32(AntelopeType):
         return cls(value=value)
 
 
-class Uint64(AntelopeType):
+class Uint64(Primitive):
     value: pydantic.conint(ge=0, lt=18446744073709551616)  # 2 ** 64
 
     def __bytes__(self):
@@ -546,7 +441,35 @@ class Uint64(AntelopeType):
         return cls(value=value)
 
 
-class Varuint32(AntelopeType):
+class UnixTimestamp(Primitive):
+    """
+    Serialize a datetime.
+
+    Precision is in seconds
+    Considers UTC time
+    """
+
+    value: dt.datetime
+
+    @pydantic.validator("value")
+    def remove_everything_bellow_seconds(cls, v):
+        new_v = v.replace(microsecond=0)
+        return new_v
+
+    def __bytes__(self):
+        unix_secs = calendar.timegm(self.value.timetuple())
+        uint32_secs = Uint32(value=unix_secs)
+        bytes_ = bytes(uint32_secs)
+        return bytes_
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        uint32_secs = Uint32.from_bytes(bytes_)
+        datetime = dt.datetime.utcfromtimestamp(uint32_secs.value)
+        return cls(value=datetime)
+
+
+class Varuint32(Primitive):
     value: pydantic.conint(ge=0, le=20989371979)
 
     def __bytes__(self):
@@ -576,103 +499,3 @@ class Varuint32(AntelopeType):
             if not byte & 0x80:  # first bit (carry) off
                 break
         return cls(value=value)
-
-
-class Wasm(AntelopeType):
-    value: bytes
-
-    @classmethod
-    def from_file(cls, file: Path, *, extension: str = ".wasm"):
-        """Create a wasm object from a .wasm or from a zipped file."""
-        if isinstance(file, Path):
-            fullpath = file
-        else:
-            fullpath = Path().resolve() / Path(file)
-
-        if fullpath.suffix == ".zip":
-            with zipfile.ZipFile(fullpath) as zp:
-                zip_path = str(fullpath.stem) + extension
-                with zp.open(zip_path, mode="r") as f:
-                    file_contents = f.read()
-
-        else:
-            with open(fullpath, "rb") as f:
-                file_contents = f.read()
-
-        return cls(value=file_contents)
-
-    def to_hex(self):
-        return str(binascii.hexlify(self.value).decode("utf-8"))
-
-    def __bytes__(self):
-        uint8_array = _hex_to_uint8_array(self.to_hex())
-        return bytes(uint8_array)
-
-    @classmethod
-    def from_bytes(cls, bytes_):
-        uint8_array = Array.from_bytes(bytes_=bytes_, type_=Uint8)
-        uint8_list = uint8_array.values
-        hexcode = _uint8_list_to_hex(uint8_list)
-        value = _hex_to_bin(hexcode)
-        return cls(value=value)
-
-
-def _hex_to_uint8_array(hex_string: str) -> Array:
-    if len(hex_string) % 2:
-        msg = "Odd number of hex digits in input file."
-        raise ValueError(msg)
-
-    bin_len = int(len(hex_string) / 2)
-    uint8_values = []
-
-    for i in range(0, bin_len):
-        try:
-            x = int(hex_string[(i * 2) : (i * 2 + 2)], base=16)  # NOQA: E203
-        except ValueError:
-            msg = "Issue converting hex to uint 8 array, Invalid hex string."
-            raise ValueError(msg)
-        uint8_values.append(x)
-
-    uint8_array = Array(type_=Uint8, values=uint8_values)
-    return uint8_array
-
-
-def _uint8_list_to_hex(uint8_list: list) -> str:
-    hexcode = ""
-    for int8 in uint8_list:
-        hexcode += ("00" + str(format(int8.value, "x")))[-2:]
-    return hexcode
-
-
-def _hex_to_bin(hexcode: str) -> bytes:
-    return binascii.unhexlify(hexcode.encode("utf-8"))
-
-
-def _get_all_types():
-    def is_eostype(class_):
-        if isinstance(class_, type):
-            if issubclass(class_, AntelopeType) and class_ is not AntelopeType:
-                return True
-        return False
-
-    classes = list(sys.modules[__name__].__dict__.items())
-
-    all_types = {
-        name.lower(): class_ for name, class_ in classes if is_eostype(class_)
-    }
-    return all_types
-
-
-_all_types = _get_all_types()
-
-
-def from_string(type_: str) -> AntelopeType:
-    """Return an AntelopeType object from a given string."""
-    type_ = type_.lower()
-    try:
-        class_ = _all_types[type_]
-    except KeyError:
-        types = list(_all_types.keys())
-        msg = f"Type {type_} not found. List of available {types=}"
-        raise ValueError(msg)
-    return class_
