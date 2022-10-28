@@ -14,8 +14,6 @@ pycryptodome = "^3.15.0"
 base58 = "^2.1.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-pytest-cov = "^3.0.0"
 flake8 = "^4.0.1"
 flake8-black = "^0.2.3"
 flake8-isort = "^4.1.1"
@@ -23,6 +21,10 @@ flake8-docstrings = "^1.6.0"
 pytest-timeout = "^2.0.1"
 pytest-rerunfailures = "^10.2"
 pytest-httpx = "^0.20.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
