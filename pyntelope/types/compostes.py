@@ -5,7 +5,7 @@ import binascii
 import json
 import zipfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pydantic
 
@@ -43,8 +43,8 @@ class Array(Composte):
     type_: type
 
     @classmethod
-    def from_dict(self, d: List, /):
-        ...
+    def from_dict(cls, /, d: dict):
+        raise NotImplementedError
 
     @pydantic.validator("type_")
     def must_be_subclass_of_antelope(cls, v):
@@ -199,7 +199,7 @@ class _AbiType(Composte):
     json_type: primitives.String
 
     @classmethod
-    def from_dict(cls, d: dict, /):
+    def from_dict(cls, /, d: dict):
         new_type_name = primitives.String(d["new_type_name"])
         json_type = primitives.String(d["type"])
         o = cls(new_type_name=new_type_name, json_type=json_type)
@@ -218,7 +218,7 @@ class _AbiStructsField(Composte):
     type_: primitives.String
 
     @classmethod
-    def from_dict(cls, d: dict, /):
+    def from_dict(cls, /, d: dict):
         name = primitives.String(d["name"])
         type_ = primitives.String(d["type"])
         return cls(name=name, type_=type_)
@@ -239,7 +239,7 @@ class _AbiStruct(Composte):
     fields: Array  # an array of _AbiStructsField
 
     @classmethod
-    def from_dict(cls, d: dict, /):
+    def from_dict(cls, /, d: dict):
         name = primitives.String(d["name"])
         base = primitives.String(d["base"])
         fields = Array(values=d["fields"], type_=_AbiStructsField)
@@ -260,7 +260,7 @@ class _AbiAction(Composte):
     ricardian_contract: primitives.String
 
     @classmethod
-    def from_dict(cls, d: dict, /):
+    def from_dict(cls, /, d: dict):
         name = primitives.Name(d["name"])
         type_ = primitives.String(d["type"])
         ric_contract = primitives.String(d["ricardian_contract"])
@@ -285,7 +285,7 @@ class _AbiTable(Composte):
     type_: primitives.String
 
     @classmethod
-    def from_dict(cls, d: dict, /):
+    def from_dict(cls, /, d: dict):
         name = primitives.Name(d["name"])
         index_type = primitives.String(d["index_type"])
         key_names = Array(type_=primitives.String, values=[])
