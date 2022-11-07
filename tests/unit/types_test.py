@@ -29,6 +29,24 @@ values = [
     (types.Int8, 0, b"\x00"),
     (types.Int8, 1, b"\x01"),
     (types.Int8, 127, b"\x7F"),
+    (types.Int16, -32768, b"\x00\x80"),
+    (types.Int16, -32767, b"\x01\x80"),
+    (types.Int16, -1, b"\xff\xff"),
+    (types.Int16, 0, b"\x00\x00"),
+    (types.Int16, 1, b"\x01\x00"),
+    (types.Int16, 32767, b"\xff\x7f"),
+    (types.Int32, -2147483648, b"\x00\x00\x00\x80"),
+    (types.Int32, -2147483647, b"\x01\x00\x00\x80"),
+    (types.Int32, -1, b"\xff\xff\xff\xff"),
+    (types.Int32, 0, b"\x00\x00\x00\x00"),
+    (types.Int32, 1, b"\x01\x00\x00\x00"),
+    (types.Int32, 2147483647, b"\xff\xff\xff\x7f"),
+    (types.Int64, -9223372036854775808, b"\x00\x00\x00\x00\x00\x00\x00\x80"),
+    (types.Int64, -9223372036854775807, b"\x01\x00\x00\x00\x00\x00\x00\x80"),
+    (types.Int64, -1, b"\xff\xff\xff\xff\xff\xff\xff\xff"),
+    (types.Int64, 0, b"\x00\x00\x00\x00\x00\x00\x00\x00"),
+    (types.Int64, 1, b"\x01\x00\x00\x00\x00\x00\x00\x00"),
+    (types.Int64, 9223372036854775807, b"\xff\xff\xff\xff\xff\xff\xff\x7f"),
     (types.Uint8, 0, b"\x00"),
     (types.Uint8, 1, b"\x01"),
     (types.Uint8, 254, b"\xFE"),
@@ -142,7 +160,9 @@ def test_abi_bytes_to_type_serialization():
 
     abi_obj = types.Abi.from_file(file=abi_path)
     output = bytes(abi_obj)
-    expected_output = types.compostes._load_bin_from_file(file=bin_path, extension="")
+    expected_output = types.compostes._load_bin_from_file(
+        file=bin_path, extension=""
+    )
 
     assert output == expected_output
 
@@ -153,7 +173,9 @@ def test_wasm_bytes_to_type_serialization():
 
     wasm_obj = types.Wasm.from_file(file=wasm_path)
     output = bytes(wasm_obj)
-    expected_output = types.compostes._load_bin_from_file(file=bin_path, extension=".bin")
+    expected_output = types.compostes._load_bin_from_file(
+        file=bin_path, extension=".bin"
+    )
 
     assert output == expected_output
 
@@ -177,6 +199,24 @@ test_serialization = [
     ("int8", "tinteight", 0),
     ("int8", "tinteight", 1),
     ("int8", "tinteight", 127),
+    ("int16", "tintsixteen", -32768),
+    ("int16", "tintsixteen", -32767),
+    ("int16", "tintsixteen", -1),
+    ("int16", "tintsixteen", 0),
+    ("int16", "tintsixteen", 1),
+    ("int16", "tintsixteen", 32767),
+    ("int32", "tintthirttwo", -2147483648),
+    ("int32", "tintthirttwo", -2147483647),
+    ("int32", "tintthirttwo", -1),
+    ("int32", "tintthirttwo", 0),
+    ("int32", "tintthirttwo", 1),
+    ("int32", "tintthirttwo", 2147483647),
+    ("int64", "tintsixfour", -9223372036854775808),
+    ("int64", "tintsixfour", -9223372036854775807),
+    ("int64", "tintsixfour", -1),
+    ("int64", "tintsixfour", 0),
+    ("int64", "tintsixfour", 1),
+    ("int64", "tintsixfour", 9223372036854775807),
     ("uint8", "tuinteight", 0),
     ("uint8", "tuinteight", 1),
     ("uint8", "tuinteight", 254),
@@ -450,4 +490,3 @@ def test_abi_from_file_with_string_and_relative_path_returns_abi_object():
     path = str(valid_contract.path_abi.relative_to(local_path))
     abi_obj = types.Abi.from_file(file=path)
     assert isinstance(abi_obj, types.Abi)
-

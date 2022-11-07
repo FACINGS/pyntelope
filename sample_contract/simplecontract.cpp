@@ -38,6 +38,9 @@ ACTION simplecontract::clear() {
 ACTION simplecontract::testname(name var) {}
 ACTION simplecontract::teststring(string var) {}
 ACTION simplecontract::tinteight(int8_t var) {}
+ACTION simplecontract::tintsixteen(int16_t var) {}
+ACTION simplecontract::tintthirttwo(int32_t var) {}
+ACTION simplecontract::tintsixfour(int64_t var) {}
 ACTION simplecontract::tuinteight(uint8_t var) {}
 ACTION simplecontract::tuintsixteen(uint16_t var) {}
 ACTION simplecontract::tuintthirtwo(uint32_t var) {}

@@ -67,6 +67,36 @@
             ]
         },
         {
+            "name": "tintsixfour",
+            "base": "",
+            "fields": [
+                {
+                    "name": "var",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "tintsixteen",
+            "base": "",
+            "fields": [
+                {
+                    "name": "var",
+                    "type": "int16"
+                }
+            ]
+        },
+        {
+            "name": "tintthirttwo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "var",
+                    "type": "int32"
+                }
+            ]
+        },
+        {
             "name": "tuinteight",
             "base": "",
             "fields": [
@@ -131,6 +161,21 @@
         {
             "name": "tinteight",
             "type": "tinteight",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tintsixfour",
+            "type": "tintsixfour",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tintsixteen",
+            "type": "tintsixteen",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tintthirttwo",
+            "type": "tintthirttwo",
             "ricardian_contract": ""
         },
         {

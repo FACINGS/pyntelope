@@ -14,6 +14,9 @@ CONTRACT simplecontract : public eosio::contract {
         ACTION testname(name var);
         ACTION teststring(string var);
         ACTION tinteight(int8_t var);
+        ACTION tintsixteen(int16_t var);
+        ACTION tintthirttwo(int32_t var);
+        ACTION tintsixfour(int64_t var);
         ACTION tuinteight(uint8_t var);
         ACTION tuintsixteen(uint16_t var);
         ACTION tuintthirtwo(uint32_t var);

@@ -216,6 +216,45 @@ class Int8(Primitive):
         return cls(value=value)
 
 
+class Int16(Primitive):
+    value: pydantic.conint(ge=-(2**15), lt=2**15)
+
+    def __bytes__(self):
+        return struct.pack("<h", self.value)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        struct_tuple = struct.unpack("<h", bytes_[:2])
+        value = struct_tuple[0]
+        return cls(value=value)
+
+
+class Int32(Primitive):
+    value: pydantic.conint(ge=-(2**31), lt=2**31)
+
+    def __bytes__(self):
+        return struct.pack("<i", self.value)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        struct_tuple = struct.unpack("<i", bytes_[:4])
+        value = struct_tuple[0]
+        return cls(value=value)
+
+
+class Int64(Primitive):
+    value: pydantic.conint(ge=-(2**63), lt=2**63)
+
+    def __bytes__(self):
+        return struct.pack("<q", self.value)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        struct_tuple = struct.unpack("<q", bytes_[:8])
+        value = struct_tuple[0]
+        return cls(value=value)
+
+
 class Name(Primitive):
     # regex = has at least one "non-dot" char
     value: pydantic.constr(
