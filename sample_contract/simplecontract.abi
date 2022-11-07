@@ -1,7 +1,12 @@
 {
     "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
     "version": "eosio::abi/1.1",
-    "types": [],
+    "types": [
+        {
+            "new_type_name": "double_t",
+            "type": "float64"
+        }
+    ],
     "structs": [
         {
             "name": "clear",
@@ -53,6 +58,16 @@
                 {
                     "name": "var",
                     "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "tfltsixfour",
+            "base": "",
+            "fields": [
+                {
+                    "name": "var",
+                    "type": "double_t"
                 }
             ]
         },
@@ -156,6 +171,11 @@
         {
             "name": "teststring",
             "type": "teststring",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tfltsixfour",
+            "type": "tfltsixfour",
             "ricardian_contract": ""
         },
         {

@@ -45,5 +45,6 @@ ACTION simplecontract::tuinteight(uint8_t var) {}
 ACTION simplecontract::tuintsixteen(uint16_t var) {}
 ACTION simplecontract::tuintthirtwo(uint32_t var) {}
 ACTION simplecontract::tuintsixfour(uint64_t var) {}
+ACTION simplecontract::tfltsixfour(double_t var) {}
 
 EOSIO_DISPATCH(simplecontract, (sendmsg)(clear))

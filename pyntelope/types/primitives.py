@@ -255,6 +255,19 @@ class Int64(Primitive):
         return cls(value=value)
 
 
+class Float64(Primitive):
+    value: float
+
+    def __bytes__(self):
+        return struct.pack("<d", self.value)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        struct_tuple = struct.unpack("<d", bytes_)
+        value = struct_tuple[0]
+        return cls(value)
+
+
 class Name(Primitive):
     # regex = has at least one "non-dot" char
     value: pydantic.constr(
