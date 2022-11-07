@@ -43,7 +43,7 @@ class Array(Composte):
     type_: type
 
     @classmethod
-    def from_dict(cls, /, d: dict):
+    def from_dict(cls, d: dict, /):
         raise NotImplementedError
 
     @pydantic.validator("type_")
