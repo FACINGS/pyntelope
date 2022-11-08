@@ -255,6 +255,24 @@ class Int64(Primitive):
         return cls(value=value)
 
 
+class Float32(Primitive):
+    value: float
+
+    def __bytes__(self):
+        return struct.pack("<f", self.value)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        struct_tuple = struct.unpack("<f", bytes_)
+        value = struct_tuple[0]
+        return cls(value)
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return bytes(self) == bytes(other)
+
+
 class Float64(Primitive):
     value: float
 

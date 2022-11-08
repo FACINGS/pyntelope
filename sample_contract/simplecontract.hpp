@@ -21,6 +21,7 @@ CONTRACT simplecontract : public eosio::contract {
         ACTION tuintsixteen(uint16_t var);
         ACTION tuintthirtwo(uint32_t var);
         ACTION tuintsixfour(uint64_t var);
+        ACTION tfltthirttwo(float_t var);
         ACTION tfltsixfour(double_t var);
 
     private:

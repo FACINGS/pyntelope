@@ -5,6 +5,10 @@
         {
             "new_type_name": "double_t",
             "type": "float64"
+        },
+        {
+            "new_type_name": "float_t",
+            "type": "float32"
         }
     ],
     "structs": [
@@ -68,6 +72,16 @@
                 {
                     "name": "var",
                     "type": "double_t"
+                }
+            ]
+        },
+        {
+            "name": "tfltthirttwo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "var",
+                    "type": "float_t"
                 }
             ]
         },
@@ -176,6 +190,11 @@
         {
             "name": "tfltsixfour",
             "type": "tfltsixfour",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tfltthirttwo",
+            "type": "tfltthirttwo",
             "ricardian_contract": ""
         },
         {
