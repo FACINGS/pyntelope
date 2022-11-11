@@ -475,12 +475,14 @@ def test_antelope_type_cannot_be_instantiated():
         types.AntelopeType()
 
 
+@pytest.mark.skip
 def test_array_can_be_sliced_1():
     arr_full = types.Array(values=range(10), type_=types.Int8)
     arr_slice = types.Array(values=range(10)[1:4], type_=types.Int8)
     assert arr_full[1:4] == arr_slice
 
 
+@pytest.mark.skip
 def test_array_can_be_sliced_2():
     arr_full = types.Array(values=range(10), type_=types.Int8)
     arr_slice = types.Array(values=range(10)[8:3:-2], type_=types.Int8)

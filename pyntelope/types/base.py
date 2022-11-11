@@ -6,12 +6,6 @@ import pydantic
 
 
 class AntelopeType(pydantic.BaseModel, ABC):
-    @pydantic.validator("value", pre=True, check_fields=False)
-    def check_if_same_type(cls, v):
-        if type(v) is cls:
-            return v.value
-        return v
-
     @abstractmethod
     def __bytes__(self):
         """Convert instance to bytes."""
