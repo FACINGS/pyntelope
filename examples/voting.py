@@ -2,7 +2,6 @@
 
 import pyntelope
 
-
 data = [
     # Specifices the voter account
     pyntelope.Data(
@@ -17,11 +16,19 @@ data = [
     # Specifics the producers
     pyntelope.Data(
         name="producers",
-        # can vote for mutliple producers, so value is of type array
-        # for Array type, need yo specify type of Array with '_type' and values of array in a list
-        value=pyntelope.types.Array(
-            type_=pyntelope.types.Name, values=["eosiodetroit"]
+        # One can vote for mutliple producers, so value is of type array
+        # An Array is what is called a Composte type. It is formed of multiple
+        # others pyntelope types.
+        # Compostes types instantiation are more verbose.
+        value=pyntelope.types.Array.from_dict(
+            ["eosiodetroit"], type_=pyntelope.types.Name
         ),
+        # If you want to instantiate it directly you'd need to provide a tuple
+        # of names:
+        # value=pyntelope.types.Array(
+        #     values=(pyntelope.types.Name("eosiodetroit")),
+        #     type_=pyntelope.types.Name,
+        # ),
     ),
 ]
 
