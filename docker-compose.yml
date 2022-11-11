@@ -13,10 +13,10 @@ x-common: &commons
 
 
 services:
-    nodeos:
+    blockproducer:
         build: .
         image: leap:3.1.0
-        container_name: nodeos
+        container_name: blockproducer
         command: ["bash", "/sample_contract/run_nodeos.sh"]
 
         volumes:
@@ -43,5 +43,5 @@ services:
             - ./sample_contract:/sample_contract:ro
 
         depends_on:
-            nodeos:
+            blockproducer:
                 condition: service_healthy

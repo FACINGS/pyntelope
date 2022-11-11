@@ -52,7 +52,7 @@ do
     echo "======================================================"
     echo "Create account user1"  # have no contract
     cleos \
-        --url http://nodeos:8888 \
+        --url http://blockproducer:8888 \
         create account eosio user1 \
         EOS5AvFzuUatd9ejnXKWWjjgjphGYRv3DSdpskkL3phC3q547kxCJ
 
@@ -60,14 +60,14 @@ do
     echo "======================================================"
     echo "Create account user2"  # will hold the samplecontract
     cleos \
-        --url http://nodeos:8888 \
+        --url http://blockproducer:8888 \
         create account eosio user2 \
         EOS5sRtLNDzsd9arp7J7qYSRRTcaLnRQFVkYtRuHn8tPeNS8D7DVM
 
     echo "======================================================"
     echo "Deploy contract simplecontract to user2"
     cleos \
-        --url http://nodeos:8888 \
+        --url http://blockproducer:8888 \
         set contract user2 . \
         /sample_contract/simplecontract.wasm /sample_contract/simplecontract.abi
 
@@ -75,14 +75,14 @@ do
     echo "======================================================"
     echo "Create account eosio.token"  # eosio.token core account
     cleos \
-        --url http://nodeos:8888 \
+        --url http://blockproducer:8888 \
         create account eosio eosio.token \
         EOS7dwjRjyyVPTg4UQQ3WozRhFLmspew8SP8BgbpTjrEPYs1c1rHV
 
     echo "======================================================"
     echo "Deploy eosio.token contract"
     cleos \
-        --url http://nodeos:8888 \
+        --url http://blockproducer:8888 \
         set contract eosio.token . \
         /sample_contract/eosio_token.wasm /sample_contract/eosio_token.abi
 
