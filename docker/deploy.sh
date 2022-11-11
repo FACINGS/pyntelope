@@ -69,7 +69,7 @@ do
     cleos \
         --url http://blockproducer:8888 \
         set contract user2 . \
-        /sample_contract/simplecontract.wasm /sample_contract/simplecontract.abi
+        /docker/simplecontract.wasm /docker/simplecontract.abi
 
 
     echo "======================================================"
@@ -84,6 +84,6 @@ do
     cleos \
         --url http://blockproducer:8888 \
         set contract eosio.token . \
-        /sample_contract/eosio_token.wasm /sample_contract/eosio_token.abi
+        /docker/eosio_token.wasm /docker/eosio_token.abi
 
 done

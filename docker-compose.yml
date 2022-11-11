@@ -17,10 +17,10 @@ services:
         build: .
         image: leap:3.1.0
         container_name: blockproducer
-        command: ["bash", "/sample_contract/run_nodeos.sh"]
+        command: ["bash", "/docker/run_leap.sh"]
 
         volumes:
-            - ./sample_contract:/sample_contract:ro
+            - ./docker:/docker:ro
 
         ports:
             - "8888:8888/tcp"
@@ -37,10 +37,10 @@ services:
         build: .
         image: leap:3.1.0
         container_name: deployer
-        command: ["bash", "/sample_contract/prepare_nodeos.sh"]
+        command: ["bash", "/docker/deploy.sh"]
 
         volumes:
-            - ./sample_contract:/sample_contract:ro
+            - ./docker:/docker:ro
 
         depends_on:
             blockproducer:
