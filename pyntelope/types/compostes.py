@@ -76,6 +76,13 @@ class Array(Composte):
         obj = cls(values=values, type_=type_)
         return obj
 
+    def to_dict(self):
+        if issubclass(self.type_, Primitive):
+            d = [i.value for i in self.values]
+        elif issubclass(self.type_, Composte):
+            d = [i.to_dict() for i in self.values]
+        return d
+
     @classmethod
     def from_bytes(cls, bytes_: bytes, /, type_: type):
         length = primitives.Varuint32.from_bytes(bytes_)
@@ -210,15 +217,26 @@ class _AbiType(Composte):
     json_type: primitives.String
 
     @classmethod
-    def from_dict(cls, /, d: dict):
+    def from_dict(cls, d: dict, /):
         new_type_name = primitives.String(d["new_type_name"])
         json_type = primitives.String(d["type"])
         o = cls(new_type_name=new_type_name, json_type=json_type)
         return o
 
+    def to_dict(self):
+        d = {
+            "new_type_name": self.new_type_name.value,
+            "type": self.json_type.value,
+        }
+        return d
+
     @classmethod
     def from_bytes(cls, bytes_):
-        ...
+        new_type_name = primitives.String.from_bytes(bytes_)
+        bytes_ = bytes_[len(new_type_name) :]  # NOQA: E203
+        json_type = primitives.String.from_bytes(bytes_)
+        obj = cls(new_type_name=new_type_name, json_type=json_type)
+        return obj
 
     def __bytes__(self):
         return bytes(self.new_type_name) + bytes(self.json_type)

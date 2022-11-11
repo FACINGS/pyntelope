@@ -9,6 +9,7 @@ import pydantic
 import pytest
 
 from pyntelope import types
+from pyntelope.types.compostes import _AbiType
 
 from .contracts.valid import eosio_token
 from .contracts.valid import simplecontract as valid_contract
@@ -416,6 +417,14 @@ array_values = [
         [0, 2**8, 2**16, 2**4],
         b"\x04\x00\x80\x02\x80\x80\x04\x10",
     ),
+    (
+        _AbiType,
+        [
+            dict(new_type_name="a", type="b"),
+            dict(new_type_name="c", type="d"),
+        ],
+        b"\x02\x01a\x01b\x01c\x01d",
+    ),
 ]
 
 
@@ -432,6 +441,13 @@ def test_bytes_to_array(type_, input_, expected_output):
     bytes_ = bytes(array)
     array_from_bytes = types.Array.from_bytes(bytes_, type_=type_)
     assert array_from_bytes == array, f"{array=}; {array_from_bytes=}"
+
+
+@pytest.mark.parametrize("type_,input_,bytes_", array_values)
+def test_array_to_dict(type_, input_, bytes_):
+    array_obj = types.Array.from_dict(input_, type_=type_)
+    dict_from_array = array_obj.to_dict()
+    assert dict_from_array == input_
 
 
 @pytest.mark.parametrize("class_,input_", error_values)
