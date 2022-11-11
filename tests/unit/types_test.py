@@ -421,51 +421,53 @@ array_values = [
 
 @pytest.mark.parametrize("type_,input_,expected_output", array_values)
 def test_array_to_bytes(type_, input_, expected_output):
-    array = types.Array(type_=type_, values=input_)
+    array = types.Array.from_dict(input_, type_=type_)
     output = bytes(array)
     assert output == expected_output
 
 
 @pytest.mark.parametrize("type_,input_,expected_output", array_values)
 def test_bytes_to_array(type_, input_, expected_output):
-    array = types.Array(type_=type_, values=input_)
+    array = types.Array.from_dict(input_, type_=type_)
     bytes_ = bytes(array)
-    array_from_bytes = types.Array.from_bytes(bytes_, type_)
+    array_from_bytes = types.Array.from_bytes(bytes_, type_=type_)
     assert array_from_bytes == array, f"{array=}; {array_from_bytes=}"
 
 
 @pytest.mark.parametrize("class_,input_", error_values)
 def test_array_validation_errors(class_, input_):
+    if type(input_) in {int, float}:
+        input_ = (input_,)
     with pytest.raises(pydantic.ValidationError):
-        types.Array(type_=class_, values=[input_])
+        types.Array(type_=class_, values=tuple(input_))
 
 
 def test_array_initialized_with_list_and_tuples_returns_the_same_result():
-    arr1 = types.Array(values=[1, 2, 3], type_=types.Int8)
-    arr2 = types.Array(values=(1, 2, 3), type_=types.Int8)
+    arr1 = types.Array.from_dict([1, 2, 3], type_=types.Int8)
+    arr2 = types.Array.from_dict((1, 2, 3), type_=types.Int8)
     assert hash(arr1) == hash(arr2)
 
 
 def test_array_initialized_with_list_and_range_returns_the_same_result():
-    arr1 = types.Array(values=[1, 2, 3], type_=types.Int8)
-    arr2 = types.Array(values=range(1, 4), type_=types.Int8)
+    arr1 = types.Array.from_dict([1, 2, 3], type_=types.Int8)
+    arr2 = types.Array.from_dict(range(1, 4), type_=types.Int8)
     assert hash(arr1) == hash(arr2)
 
 
 def test_array_initialized_with_list_and_string_returns_the_same_result():
-    arr1 = types.Array(values=["a", "b", "c"], type_=types.Name)
-    arr2 = types.Array(values="abc", type_=types.Name)
+    arr1 = types.Array.from_dict(["a", "b", "c"], type_=types.Name)
+    arr2 = types.Array.from_dict("abc", type_=types.Name)
     assert hash(arr1) == hash(arr2)
 
 
 def test_array_elements_are_immutable_directly():
-    arr = types.Array(values=[1, 2, 3], type_=types.Int8)
+    arr = types.Array.from_dict([1, 2, 3], type_=types.Int8)
     with pytest.raises(TypeError):
         arr[1] = 2
 
 
 def test_array_elements_are_immutable_when_try_to_mutate_value():
-    arr = types.Array(values=[1, 2, 3], type_=types.Int8)
+    arr = types.Array.from_dict([1, 2, 3], type_=types.Int8)
     with pytest.raises(TypeError):
         arr.values[1] = 2
 
@@ -475,17 +477,15 @@ def test_antelope_type_cannot_be_instantiated():
         types.AntelopeType()
 
 
-@pytest.mark.skip
 def test_array_can_be_sliced_1():
-    arr_full = types.Array(values=range(10), type_=types.Int8)
-    arr_slice = types.Array(values=range(10)[1:4], type_=types.Int8)
+    arr_full = types.Array.from_dict(range(10), type_=types.Int8)
+    arr_slice = types.Array.from_dict(range(10)[1:4], type_=types.Int8)
     assert arr_full[1:4] == arr_slice
 
 
-@pytest.mark.skip
 def test_array_can_be_sliced_2():
-    arr_full = types.Array(values=range(10), type_=types.Int8)
-    arr_slice = types.Array(values=range(10)[8:3:-2], type_=types.Int8)
+    arr_full = types.Array.from_dict(range(10), type_=types.Int8)
+    arr_slice = types.Array.from_dict(range(10)[8:3:-2], type_=types.Int8)
     assert arr_full[8:3:-2] == arr_slice
 
 

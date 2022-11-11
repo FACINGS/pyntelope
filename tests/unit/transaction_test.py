@@ -8,8 +8,9 @@ import pytest
 
 import pyntelope
 
-from .contracts.valid import hello as valid_contract
 from .contracts.valid import eosio_token as eosio_token_contract
+from .contracts.valid import hello as valid_contract
+
 
 def test_create_authorization_using_dict():
     auth = pyntelope.Authorization.parse_obj(
@@ -125,6 +126,7 @@ def test_backend_transfer_transaction_serialization(net):
 
     assert backend_data_bytes == server_data_bytes
 
+
 def test_backend_json_to_hex_abi_serialization(net):
     abi_obj = pyntelope.types.Abi.from_file(eosio_token_contract.path_abi)
 
@@ -133,6 +135,7 @@ def test_backend_json_to_hex_abi_serialization(net):
     server_abi_hex = pyntelope.types.compostes._bin_to_hex(server_abi)
 
     assert server_abi_hex == abi_obj.to_hex()
+
 
 def test_backend_set_wasm_code_transaction_serialization(net):
     wasm_obj = pyntelope.types.Wasm.from_file(valid_contract.path_zip)
@@ -195,8 +198,8 @@ def test_data_bytes_hex_return_expected_value():
         ),
     ]
     data_bytes = [bytes(d) for d in data]
-    data = pyntelope.types.Array(
-        type_=pyntelope.types.Bytes, values=data_bytes
+    data = pyntelope.types.Array.from_dict(
+        data_bytes, type_=pyntelope.types.Bytes
     )
     bytes_ = bytes(data)
     action_hex = bytes_.hex()

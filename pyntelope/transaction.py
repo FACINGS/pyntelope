@@ -159,7 +159,7 @@ class LinkedAction(Action):
         bytes_ += bytes(action_name)
 
         auth_bytes = [bytes(a) for a in self.authorization]
-        auth = types.Array(type_=types.Bytes, values=auth_bytes)
+        auth = types.Array.from_dict(auth_bytes, type_=types.Bytes)
         bytes_ += bytes(auth)
 
         data_bytes = b""
@@ -170,7 +170,7 @@ class LinkedAction(Action):
         for i in range(0, len(data_bytes), 2):
             data_bytes_list.append(data_bytes[i : i + 2])  # NOQA: E203
         data_bytes_list = [bytes.fromhex(b) for b in data_bytes_list]
-        data = types.Array(type_=types.Bytes, values=data_bytes_list)
+        data = types.Array.from_dict(data_bytes_list, type_=types.Bytes)
 
         bytes_ += bytes(data)
 
@@ -274,14 +274,14 @@ class LinkedTransaction(Transaction):
         bytes_ += bytes(types.Uint8(self.max_cpu_usage_ms))
         bytes_ += bytes(types.Varuint32(self.delay_sec))
         # context_free_actions
-        bytes_ += bytes(types.Array(type_=types.Int8, values=[]))
+        bytes_ += bytes(types.Array.from_dict([], type_=types.Int8))
 
         actions_bytes = [bytes(act) for act in self.actions]
-        actions = types.Array(type_=types.Bytes, values=actions_bytes)
+        actions = types.Array.from_dict(actions_bytes, type_=types.Bytes)
         bytes_ += bytes(actions)
 
         # transaction_extensions
-        bytes_ += bytes(types.Array(type_=types.Int8, values=[]))
+        bytes_ += bytes(types.Array.from_dict([], type_=types.Int8))
 
         return bytes_
 

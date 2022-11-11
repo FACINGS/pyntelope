@@ -42,43 +42,52 @@ class Array(Composte):
     values: tuple
     type_: type
 
-    @classmethod
-    def from_dict(cls, d: dict, /):
-        raise NotImplementedError
-
     @pydantic.validator("type_")
     def must_be_subclass_of_antelope(cls, v):
         if not issubclass(v, AntelopeType):
             raise ValueError("Type must be subclass of AntelopeType")
         return v
 
+    @pydantic.root_validator
+    def all_values_must_be_instances_of_type(cls, all_values):
+        type_ = all_values["type_"]
+        values = all_values["values"]
+        for value in values:
+            if not isinstance(value, type_):
+                msg = (
+                    f"{value=} is of type={type(value)} "
+                    f"but instance of {type_} was expected"
+                )
+                raise TypeError(msg)
+        return all_values
+
     @classmethod
-    def from_bytes(cls, bytes_, type_):
+    def from_dict(cls, d: dict, /, type_: type):
+        try:
+            _ = iter(d)
+        except TypeError:
+            raise TypeError("Only iterables are supported.")
+
+        if issubclass(type_, Primitive):
+            constructor = type_
+        elif issubclass(type_, Composte):
+            constructor = type_.from_dict
+        values = tuple(constructor(i) for i in d)
+        obj = cls(values=values, type_=type_)
+        return obj
+
+    @classmethod
+    def from_bytes(cls, bytes_: bytes, /, type_: type):
         length = primitives.Varuint32.from_bytes(bytes_)
         bytes_ = bytes_[len(length) :]  # NOQA: E203
         values = []
         for n in range(length.value):
             value = type_.from_bytes(bytes_)
-            values.append(value.value)
+            values.append(value)
             bytes_ = bytes_[len(value) :]  # NOQA: E203
-        return cls(values=values, type_=type_)
-
-    @pydantic.root_validator(pre=True)
-    def all_must_satisfy_type_value(cls, all_values):
-        type_ = all_values["type_"]
-        values = all_values["values"]
-        if len(values) >= 1:
-            if issubclass(type_, Primitive):
-                values = tuple(type_(v) for v in values)
-            elif issubclass(type_, Composte):
-                values = tuple(type_.from_dict(v) for v in values)
-            else:
-                msg = f"Type {type(type_)} not supported."
-                raise TypeError(msg)
-        else:
-            values = tuple()
-        all_values["values"] = values
-        return all_values
+        values = tuple(values)
+        obj = cls(values=values, type_=type_)
+        return obj
 
     def __bytes__(self):
         bytes_ = b""
@@ -88,8 +97,10 @@ class Array(Composte):
             bytes_ += bytes(value)
         return bytes_
 
-    def __getitem__(self, index):
-        return Array(values=self.values[index], type_=self.type_)
+    def __getitem__(self, index, /):
+        sliced_values = self.values[index]
+        sliced_obj = self.__class__(values=sliced_values, type_=self.type_)
+        return sliced_obj
 
 
 class Abi(Composte):
@@ -110,29 +121,29 @@ class Abi(Composte):
     def from_dict(cls, /, d: dict):
         comment = primitives.String(d.get("____comment", ""))
         version = primitives.String(d["version"])
-        types = Array(type_=_AbiType, values=d.get("types", []))
-        structs = Array(type_=_AbiStruct, values=d.get("structs", []))
-        actions = Array(type_=_AbiAction, values=d.get("actions", []))
-        tables = Array(type_=_AbiTable, values=d.get("tables", []))
-        ricardian_clauses = Array(type_=primitives.String, values=[])
-        error_messages = Array(
-            type_=primitives.String, values=d.get("error_messages", [])
+        types = Array.from_dict(d.get("types", ()), type_=_AbiType)
+        structs = Array.from_dict(d.get("structs", ()), type_=_AbiStruct)
+        actions = Array.from_dict(d.get("actions", ()), type_=_AbiAction)
+        tables = Array.from_dict(d.get("tables", ()), type_=_AbiTable)
+        ricardian_clauses = Array.from_dict((), type_=primitives.String)
+        error_messages = Array.from_dict(
+            d.get("error_messages", ()), type_=primitives.String
         )
-        abi_extensions = Array(
-            type_=primitives.String, values=d.get("abi_extensions", [])
+        abi_extensions = Array.from_dict(
+            d.get("abi_extensions", ()), type_=primitives.String
         )
         variants = (
-            Array(type_=primitives.String, values=d["variants"])
+            Array.from_dict(d["variants"], type_=primitives.String)
             if "variants" in d
             else None
         )
         action_results = (
-            Array(type_=primitives.String, values=d["action_results"])
+            Array.from_dict(d["action_results"], type_=primitives.String)
             if "action_results" in d
             else None
         )
         kv_tables = (
-            Array(type_=primitives.String, values=d["kv_tables"])
+            Array.from_dict(d["kv_tables"], type_=primitives.String)
             if "kv_tables" in d
             else None
         )
@@ -242,7 +253,7 @@ class _AbiStruct(Composte):
     def from_dict(cls, /, d: dict):
         name = primitives.String(d["name"])
         base = primitives.String(d["base"])
-        fields = Array(values=d["fields"], type_=_AbiStructsField)
+        fields = Array.from_dict(d["fields"], type_=_AbiStructsField)
         o = cls(name=name, base=base, fields=fields)
         return o
 
@@ -288,8 +299,8 @@ class _AbiTable(Composte):
     def from_dict(cls, /, d: dict):
         name = primitives.Name(d["name"])
         index_type = primitives.String(d["index_type"])
-        key_names = Array(type_=primitives.String, values=[])
-        key_types = Array(type_=primitives.String, values=[])
+        key_names = Array.from_dict([], type_=primitives.String)
+        key_types = Array.from_dict([], type_=primitives.String)
         type_ = primitives.String(d["type"])
         o = cls(
             name=name,
@@ -349,7 +360,7 @@ def _hex_to_uint8_array(hex_string: str) -> Array:
             raise ValueError(msg)
         uint8_values.append(x)
 
-    uint8_array = Array(type_=primitives.Uint8, values=uint8_values)
+    uint8_array = Array.from_dict(uint8_values, type_=primitives.Uint8)
     return uint8_array
 
 
