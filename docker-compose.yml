@@ -27,8 +27,8 @@ services:
 
         healthcheck:
             test: ["CMD", "curl", "http://localhost:8888/v1/chain/get_info"]
-            interval: 10s
-            timeout: 10s
+            interval: 2s
+            timeout: 2s
             retries: 3
             start_period: 60s
 
