@@ -169,6 +169,81 @@ values = [
         "99 WAX",
         b"c\x00\x00\x00\x00\x00\x00\x00\x00WAX\x00\x00\x00\x00",
     ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0),
+        b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0),
+        b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 0),
+        b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 1),
+        b"\xa8\x8b\x8b;\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 2),
+        b"\x90\x8f\x8b;\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 3),
+        b"x\x93\x8b;\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 4),
+        b"`\x97\x8b;\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 1),
+        b"@B\x0f\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(2040, 12, 31, 23, 59),
+        b"\x00Y\x14\xef\xd2\xf5\x07\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(2040, 12, 31, 23, 59, 0),
+        b"\x00Y\x14\xef\xd2\xf5\x07\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(2021, 8, 26, 14, 1, 47),
+        b"\xc0\x08\xbd\xcev\xca\x05\x00",
+    ),
+    # (
+    #     types.TimePoint,
+    #     dt.datetime(1970, 1, 1, 0, 0, 0, 999997),
+    #     b"\x08F&w\x00\x00\x00\x00",
+    # ),
+    # (
+    #     types.TimePoint,
+    #     dt.datetime(1970, 1, 1, 0, 0, 0, 999998),
+    #     b"\xf0I&w\x00\x00\x00\x00",
+    # ),
+    # (
+    #     types.TimePoint,
+    #     dt.datetime(1970, 1, 1, 0, 0, 0, 999999),
+    #     b"\xd8M&w\x00\x00\x00\x00",
+    # ),
+    # (
+    #     types.TimePoint,
+    #     dt.datetime(2021, 8, 26, 14, 1, 47, 184549),
+    #     b"\x08\x8fH\x15w\xca\x05\x00",
+    # ),
 ]
 
 
