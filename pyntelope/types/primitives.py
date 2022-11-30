@@ -511,6 +511,44 @@ class Uint64(Primitive):
         return cls(value=value)
 
 
+class TimePoint(Primitive):
+    """
+    Serialize a datetime.
+
+    Max precision is in nanoseconds
+    Considers UTC time
+    """
+
+    value: dt.datetime
+
+    def __bytes__(self):
+        epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
+        if self.value.microsecond == 0:
+            since_epoch = self.value - epoch
+            secs_since_epoch = since_epoch.days * 86400 + since_epoch.seconds
+            n = secs_since_epoch * 1_000_000
+            uint64_secs = Uint64(n)
+            bytes_ = bytes(uint64_secs)
+        else:
+            since_epoch = self.value - epoch
+            n = since_epoch.days * 86_400 *  1_000_000
+            n += since_epoch.seconds * 1_000_000
+            n += since_epoch.microseconds * 1000
+            n += 999_000_000
+            uint64_secs = Uint64(n)
+            bytes_ = bytes(uint64_secs)
+        return bytes_
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        uint64_secs = Uint64.from_bytes(bytes_)
+        secs_since_epoch = uint64_secs.value
+        delta = dt.timedelta(seconds=secs_since_epoch)
+        epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
+        datetime = epoch + delta
+        return cls(value=datetime)
+
+
 class UnixTimestamp(Primitive):
     """
     Serialize a datetime.

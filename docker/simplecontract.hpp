@@ -23,6 +23,7 @@ CONTRACT simplecontract : public eosio::contract {
         ACTION tuintsixfour(uint64_t var);
         ACTION tfltthirttwo(float_t var);
         ACTION tfltsixfour(double_t var);
+        ACTION ttimepoint(time_point var);
 
     private:
         TABLE messages {

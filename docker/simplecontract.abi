@@ -126,6 +126,16 @@
             ]
         },
         {
+            "name": "ttimepoint",
+            "base": "",
+            "fields": [
+                {
+                    "name": "var",
+                    "type": "time_point"
+                }
+            ]
+        },
+        {
             "name": "tuinteight",
             "base": "",
             "fields": [
@@ -215,6 +225,11 @@
         {
             "name": "tintthirttwo",
             "type": "tintthirttwo",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "ttimepoint",
+            "type": "ttimepoint",
             "ricardian_contract": ""
         },
         {

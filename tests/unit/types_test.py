@@ -326,6 +326,26 @@ test_serialization = [
     (types.Uint64, "tuintsixfour", 1),
     (types.Uint64, "tuintsixfour", 2**64 - 2),
     (types.Uint64, "tuintsixfour", 2**64 - 1),
+    #
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 1)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 2)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 3)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 4)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999997)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999998)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999999)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 1)),
+    (types.TimePoint, "ttimepoint", dt.datetime(2040, 12, 31, 23, 59)),
+    (types.TimePoint, "ttimepoint", dt.datetime(2040, 12, 31, 23, 59, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(2021, 8, 26, 14, 1, 47)),
+    (
+        types.TimePoint,
+        "ttimepoint",
+        dt.datetime(2021, 8, 26, 14, 1, 47, 184549),
+    ),
 ]
 
 
@@ -339,7 +359,7 @@ def test_pyntelope_serialization_vs_leap_serialization(
         json={"var": value},
     )
     local_serialization = bytes(class_(value))
-    assert nodeos_serialization == local_serialization
+    assert nodeos_serialization == local_serialization, f"{value=}; {nodeos_serialization=}; {local_serialization=}"
 
 
 error_values = [
