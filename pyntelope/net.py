@@ -6,6 +6,8 @@ https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api
 """
 
 import base64
+import datetime as dt
+import json
 import typing
 from urllib.parse import urljoin
 
@@ -14,6 +16,12 @@ import pydantic
 
 from pyntelope import exc
 from pyntelope._version import __version__
+
+
+def _default(val):
+    if isinstance(val, dt.datetime):
+        return val.isoformat()
+    raise TypeError()
 
 
 class Net(pydantic.BaseModel):
@@ -33,11 +41,16 @@ class Net(pydantic.BaseModel):
     ):
         url = urljoin(self.host, endpoint)
 
-        headers = {"user-agent": f"pyntelope/{__version__}"}
+        headers = {
+            "user-agent": f"pyntelope/{__version__}",
+            "content-type": "application/json",
+        }
         headers.update(self.headers)
 
+        json_payload = json.dumps(payload, default=_default)
+
         try:
-            resp = httpx.post(url, json=payload, headers=headers)
+            resp = httpx.post(url, data=json_payload, headers=headers)
         except (
             httpx.TimeoutException,
             httpx.NetworkError,
