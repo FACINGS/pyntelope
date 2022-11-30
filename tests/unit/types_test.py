@@ -326,7 +326,6 @@ test_serialization = [
     (types.Uint64, "tuintsixfour", 1),
     (types.Uint64, "tuintsixfour", 2**64 - 2),
     (types.Uint64, "tuintsixfour", 2**64 - 1),
-    #
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0)),
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0)),
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 0)),
