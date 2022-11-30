@@ -358,7 +358,8 @@ def test_pyntelope_serialization_vs_leap_serialization(
         json={"var": value},
     )
     local_serialization = bytes(class_(value))
-    assert nodeos_serialization == local_serialization, f"{value=}; {nodeos_serialization=}; {local_serialization=}"
+    err_msg = f"{value=}; {nodeos_serialization=}; {local_serialization=}"
+    assert nodeos_serialization == local_serialization, err_msg
 
 
 error_values = [
