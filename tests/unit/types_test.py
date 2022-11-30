@@ -224,6 +224,9 @@ values = [
         dt.datetime(2021, 8, 26, 14, 1, 47),
         b"\xc0\x08\xbd\xcev\xca\x05\x00",
     ),
+    # these test cases bellow fail because eosio::time_point collide when
+    # serializing some values. For instance:
+    # 1970-01-01T00:16:39.000997 collides with 1970-01-01T00:00:00.999997
     # (
     #     types.TimePoint,
     #     dt.datetime(1970, 1, 1, 0, 0, 0, 999997),
