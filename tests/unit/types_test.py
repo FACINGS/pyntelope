@@ -186,23 +186,23 @@ values = [
     ),
     (
         types.TimePoint,
-        dt.datetime(1970, 1, 1, 0, 0, 0, 1),
-        b"\xa8\x8b\x8b;\x00\x00\x00\x00",
+        dt.datetime(1970, 1, 1, 0, 0, 0, 1000),
+        b"\xe8\x03\x00\x00\x00\x00\x00\x00",
     ),
     (
         types.TimePoint,
-        dt.datetime(1970, 1, 1, 0, 0, 0, 2),
-        b"\x90\x8f\x8b;\x00\x00\x00\x00",
+        dt.datetime(1970, 1, 1, 0, 0, 0, 2000),
+        b"\xd0\x07\x00\x00\x00\x00\x00\x00",
     ),
     (
         types.TimePoint,
-        dt.datetime(1970, 1, 1, 0, 0, 0, 3),
-        b"x\x93\x8b;\x00\x00\x00\x00",
+        dt.datetime(1970, 1, 1, 0, 0, 0, 3000),
+        b"\xb8\x0b\x00\x00\x00\x00\x00\x00",
     ),
     (
         types.TimePoint,
-        dt.datetime(1970, 1, 1, 0, 0, 0, 4),
-        b"`\x97\x8b;\x00\x00\x00\x00",
+        dt.datetime(1970, 1, 1, 0, 0, 0, 4000),
+        b"\xa0\x0f\x00\x00\x00\x00\x00\x00",
     ),
     (
         types.TimePoint,
@@ -224,29 +224,6 @@ values = [
         dt.datetime(2021, 8, 26, 14, 1, 47),
         b"\xc0\x08\xbd\xcev\xca\x05\x00",
     ),
-    # these test cases bellow fail because eosio::time_point collide when
-    # serializing some values. For instance:
-    # 1970-01-01T00:16:39.000997 collides with 1970-01-01T00:00:00.999997
-    # (
-    #     types.TimePoint,
-    #     dt.datetime(1970, 1, 1, 0, 0, 0, 999997),
-    #     b"\x08F&w\x00\x00\x00\x00",
-    # ),
-    # (
-    #     types.TimePoint,
-    #     dt.datetime(1970, 1, 1, 0, 0, 0, 999998),
-    #     b"\xf0I&w\x00\x00\x00\x00",
-    # ),
-    # (
-    #     types.TimePoint,
-    #     dt.datetime(1970, 1, 1, 0, 0, 0, 999999),
-    #     b"\xd8M&w\x00\x00\x00\x00",
-    # ),
-    # (
-    #     types.TimePoint,
-    #     dt.datetime(2021, 8, 26, 14, 1, 47, 184549),
-    #     b"\x08\x8fH\x15w\xca\x05\x00",
-    # ),
 ]
 
 
@@ -407,13 +384,13 @@ test_serialization = [
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0)),
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0)),
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 0)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 1)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 2)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 3)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 4)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999997)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999998)),
-    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999999)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 1000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 2000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 3000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 4000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 997000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 998000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999000)),
     (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 1)),
     (types.TimePoint, "ttimepoint", dt.datetime(2040, 12, 31, 23, 59)),
     (types.TimePoint, "ttimepoint", dt.datetime(2040, 12, 31, 23, 59, 0)),
@@ -421,7 +398,7 @@ test_serialization = [
     (
         types.TimePoint,
         "ttimepoint",
-        dt.datetime(2021, 8, 26, 14, 1, 47, 184549),
+        dt.datetime(2021, 8, 26, 14, 1, 47, 184000),
     ),
 ]
 
@@ -430,6 +407,10 @@ test_serialization = [
 def test_pyntelope_serialization_vs_leap_serialization(
     class_, action_, value, net
 ):
+    if class_ == types.TimePoint:
+        value = value.isoformat(timespec="microseconds")[:-3]
+        print(value)
+
     nodeos_serialization = net.abi_json_to_bin(
         account_name="user2",
         action=action_,
@@ -495,6 +476,10 @@ error_values = [
     (types.Asset, "99"),
     (types.Asset, "99. WAXXXXXX"),
     (types.Asset, "99."),
+    (types.TimePoint, dt.datetime(1970, 1, 1, 0, 0, 0, 999997)),
+    (types.TimePoint, dt.datetime(1970, 1, 1, 0, 0, 0, 999998)),
+    (types.TimePoint, dt.datetime(1970, 1, 1, 0, 0, 0, 999999)),
+    (types.TimePoint, dt.datetime(2021, 8, 26, 14, 1, 47, 184549)),
 ]
 
 
@@ -550,7 +535,7 @@ def test_array_to_dict(type_, input_, bytes_):
 
 @pytest.mark.parametrize("class_,input_", error_values)
 def test_array_validation_errors(class_, input_):
-    if type(input_) in {int, float}:
+    if type(input_) in {int, float, dt.datetime}:
         input_ = (input_,)
     with pytest.raises(pydantic.ValidationError):
         types.Array(type_=class_, values=tuple(input_))

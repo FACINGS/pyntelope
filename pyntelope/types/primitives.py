@@ -515,34 +515,30 @@ class TimePoint(Primitive):
     """
     Serialize a datetime.
 
-    Max precision is in nanoseconds
+    Max precision is in miliseconds, anything bellow is rejected
     Considers UTC time
     """
 
     value: dt.datetime
 
+    @pydantic.validator("value")
+    def max_precision_is_miliseconds(cls, v):
+        if v.microsecond % 1000 != 0:
+            msg = "The smallest time unit allowed is miliseconds"
+            raise ValueError(msg)
+        return v
+
     def _to_number(self) -> int:
         epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
         since_epoch = self.value - epoch
-        n = since_epoch.days * 86_400 * 1_000_000
-        n += since_epoch.seconds * 1_000_000
-        if self.value.microsecond != 0:
-            n += since_epoch.microseconds * 1000
-            n += 999_000_000
+        n = since_epoch.total_seconds() * 1_000_000
         return n
 
     @classmethod
     def _from_number(cls, *, n: int):
         epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
-
-        microseconds = int((n % 1_000_000) / 1000)
-
-        seconds = int(n / 1_000_000)
-        if microseconds:
-            seconds = seconds - 999
-        delta = dt.timedelta(seconds=seconds, microseconds=microseconds)
+        delta = dt.timedelta(microseconds=n)
         datetime = epoch + delta
-
         obj = cls(datetime)
         return obj
 
