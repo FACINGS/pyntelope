@@ -255,15 +255,15 @@ class Net(pydantic.BaseModel):
 
 
 class WaxTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.waxsweden.org/"
+    host: pydantic.HttpUrl = "https://testnet.wax.detroitledger.tech"
 
 
 class WaxMainnet(Net):
-    host: pydantic.HttpUrl = "https://facings.waxpub.net"
+    host: pydantic.HttpUrl = "https://api.wax.detroitledger.tech"
 
 
 class EosMainnet(Net):
-    host: pydantic.HttpUrl = "https://api.eossweden.org"
+    host: pydantic.HttpUrl = "https://api.eos.detroitledger.tech"
 
 
 class KylinTestnet(Net):
@@ -279,7 +279,7 @@ class TelosMainnet(Net):
 
 
 class TelosTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.telos.caleos.io"
+    host: pydantic.HttpUrl = "https://testnet.telos.detroitledger.tech"
 
 
 class ProtonMainnet(Net):
