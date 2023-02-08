@@ -4,7 +4,6 @@ import pytest
 
 import pyntelope
 
-
 aliases = [
     pyntelope.EosMainnet,
     pyntelope.KylinTestnet,
@@ -20,7 +19,7 @@ aliases = [
 ]
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize("alias", aliases)
 def test_get_info_from_alias(alias):
     net = alias()
