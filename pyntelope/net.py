@@ -6,6 +6,7 @@ https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api
 """
 
 import base64
+import logging
 import typing
 from urllib.parse import urljoin
 
@@ -14,6 +15,15 @@ import pydantic
 
 from pyntelope import exc
 from pyntelope._version import __version__
+
+logger = logging.getLogger(__name__)
+
+DEPRECATION_WARNING = (
+    "The abi_bin_to_json and abi_json_to_bin conversion APIs are "
+    "both deprecated as of the Leap v3.1 release. "
+    "(https://eosnetwork.com/blog/leap-v3-1-release-features/)"
+    "They will also be removed from pyntelope in a future version."
+)
 
 
 class Net(pydantic.BaseModel):
@@ -60,6 +70,7 @@ class Net(pydantic.BaseModel):
     def abi_bin_to_json(
         self, *, account_name: str, action: str, bytes: dict
     ) -> dict:
+        logger.warning(DEPRECATION_WARNING)
         endpoint = "/v1/chain/abi_bin_to_json"
         payload = dict(code=account_name, action=action, binargs=bytes.hex())
         data = self._request(endpoint=endpoint, payload=payload)
@@ -73,6 +84,7 @@ class Net(pydantic.BaseModel):
 
         https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api-reference/index#operation/abi_json_to_bin
         """
+        logger.warning(DEPRECATION_WARNING)
         endpoint = "/v1/chain/abi_json_to_bin"
         payload = dict(code=account_name, action=action, args=json)
         data = self._request(endpoint=endpoint, payload=payload)
