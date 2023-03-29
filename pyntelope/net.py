@@ -286,6 +286,10 @@ class Jungle3Testnet(Net):
     host: pydantic.HttpUrl = "https://jungle3.eossweden.org"
 
 
+class Jungle4Testnet(Net):
+    host: pydantic.HttpUrl = "https://jungle4.api.eosnation.io"    
+
+
 class TelosMainnet(Net):
     host: pydantic.HttpUrl = "https://telos.caleos.io/"
 
@@ -319,6 +323,7 @@ __all__ = [
     "EosMainnet",
     "KylinTestnet",
     "Jungle3Testnet",
+    "Jungle4Testnet",
     "TelosMainnet",
     "TelosTestnet",
     "ProtonMainnet",
