@@ -253,8 +253,8 @@ class Net(pydantic.BaseModel):
             if not full or not data.get("more"):
                 break
 
-            next_key = data["next_key"]
-            payload["lower_bound"] = next_key
+            lower_bound = data["next_key"]
+            payload["lower_bound"] = lower_bound
         else:
             raise ValueError("Too many requests (>1000) for table")
 
