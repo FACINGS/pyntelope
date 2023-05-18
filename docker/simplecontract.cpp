@@ -35,6 +35,19 @@ ACTION simplecontract::clear() {
     }
 }
 
+ACTION simplecontract::filllongtbl() {
+    longtable_table _longtable(get_self(), get_self().value);
+    for ( uint16_t i = 0; i < 3000; ++i ) {
+        _longtable.emplace(
+            _self,
+            [&](auto& row) {
+                row.id = i;
+                row.value = i;
+            }
+        );
+    }
+}
+
 ACTION simplecontract::testname(name var) {}
 ACTION simplecontract::teststring(string var) {}
 ACTION simplecontract::tinteight(int8_t var) {}
@@ -49,4 +62,4 @@ ACTION simplecontract::tfltthirttwo(float_t var) {}
 ACTION simplecontract::tfltsixfour(double_t var) {}
 ACTION simplecontract::ttimepoint(time_point var) {}
 
-EOSIO_DISPATCH(simplecontract, (sendmsg)(clear))
+EOSIO_DISPATCH(simplecontract, (sendmsg)(clear)(filllongtbl))

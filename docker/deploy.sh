@@ -86,4 +86,14 @@ do
         set contract eosio.token . \
         /docker/eosio_token.wasm /docker/eosio_token.abi
 
+    echo "======================================================"
+    echo "Fill long table"
+    cleos \
+        --url http://blockproducer:8888 \
+        push action \
+        user2 \
+        filllongtbl \
+        '{}' \
+        -p user2@active
+
 done

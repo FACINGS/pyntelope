@@ -1,6 +1,6 @@
 {
     "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
-    "version": "eosio::abi/1.1",
+    "version": "eosio::abi/1.2",
     "types": [
         {
             "new_type_name": "double_t",
@@ -16,6 +16,25 @@
             "name": "clear",
             "base": "",
             "fields": []
+        },
+        {
+            "name": "filllongtbl",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "longtable",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint16"
+                },
+                {
+                    "name": "value",
+                    "type": "uint16"
+                }
+            ]
         },
         {
             "name": "messages",
@@ -183,6 +202,11 @@
             "ricardian_contract": ""
         },
         {
+            "name": "filllongtbl",
+            "type": "filllongtbl",
+            "ricardian_contract": ""
+        },
+        {
             "name": "sendmsg",
             "type": "sendmsg",
             "ricardian_contract": ""
@@ -255,6 +279,13 @@
     ],
     "tables": [
         {
+            "name": "longtable",
+            "type": "longtable",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
             "name": "messages",
             "type": "messages",
             "index_type": "i64",
@@ -263,5 +294,6 @@
         }
     ],
     "ricardian_clauses": [],
-    "variants": []
+    "variants": [],
+    "action_results": []
 }

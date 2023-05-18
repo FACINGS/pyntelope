@@ -269,6 +269,26 @@ def test_get_table_rows_with_strange_scope_returns_empty_list(net):
     assert resp == []
 
 
+def test_get_table_rows_returns_non_empty_list(net):
+    resp = net.get_table_rows(code="user2", table="longtable", scope="user2")
+    assert len(resp) > 0
+
+
+def test_get_table_rows_with_limit_returns_limit_items(net):
+    limit = 15
+    resp = net.get_table_rows(
+        code="user2", table="longtable", scope="user2", limit=limit
+    )
+    assert len(resp) == limit
+
+
+def test_get_table_rows_full_returns_3000_items(net):
+    resp = net.get_table_rows(
+        code="user2", table="longtable", scope="user2", full=True
+    )
+    assert len(resp) == 3000
+
+
 def test_get_info_request_headers_include_pyntelope_user_agent(
     net, httpx_mock
 ):

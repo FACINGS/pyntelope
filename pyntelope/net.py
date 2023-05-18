@@ -193,7 +193,7 @@ class Net(pydantic.BaseModel):
         data = self._request(endpoint=endpoint, payload=payload)
         return data
 
-    def get_table_rows(
+    def get_table_rows(  # NOQA: C901
         self,
         code: str,
         table: str,
@@ -207,6 +207,7 @@ class Net(pydantic.BaseModel):
         limit: int = None,
         reverse: int = None,
         show_payer: int = None,
+        full: bool = False,
     ):
         """
         Return a list with the rows in the table.
@@ -218,8 +219,16 @@ class Net(pydantic.BaseModel):
         -----------
         json: bool = True
             Get the response as json
+        full: bool = True
+            Get the full table.
+            Requires multiple requests to be made.
         """
         endpoint = "/v1/chain/get_table_rows"
+
+        # when getting the entire table, the faster, the better
+        if full is True and limit is None:
+            limit = 1000
+
         payload = dict(
             code=code,
             table=table,
@@ -237,11 +246,24 @@ class Net(pydantic.BaseModel):
         for k in list(payload.keys()):
             if payload[k] is None:
                 del payload[k]
-        data = self._request(endpoint=endpoint, payload=payload)
-        if "rows" in data:
-            return data["rows"]
+
+        rows = []
+        for _ in range(1000):
+            logger.debug(f"Get data with {lower_bound=}")
+            data = self._request(endpoint=endpoint, payload=payload)
+            if "rows" not in data:
+                return data
+            rows += data["rows"]
+
+            if not full or not data.get("more"):
+                break
+
+            next_key = data["next_key"]
+            payload["lower_bound"] = next_key
         else:
-            return data
+            raise ValueError("Too many requests (>1000) for table")
+
+        return rows
 
     def push_transaction(
         self,
