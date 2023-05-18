@@ -289,6 +289,13 @@ def test_get_table_rows_full_returns_3000_items(net):
     assert len(resp) == 3000
 
 
+def test_get_table_rows_full_with_limit_raise_value_error(net):
+    with pytest.raises(ValueError):
+        net.get_table_rows(
+            code="user2", table="longtable", scope="user2", full=True, limit=1
+        )
+
+
 def test_get_info_request_headers_include_pyntelope_user_agent(
     net, httpx_mock
 ):
