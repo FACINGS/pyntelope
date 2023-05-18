@@ -222,6 +222,7 @@ class Net(pydantic.BaseModel):
         full: bool = True
             Get the full table.
             Requires multiple requests to be made.
+            The maximum number of requests made is 1000.
         """
         endpoint = "/v1/chain/get_table_rows"
 
