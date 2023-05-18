@@ -193,7 +193,7 @@ class Net(pydantic.BaseModel):
         data = self._request(endpoint=endpoint, payload=payload)
         return data
 
-    def get_table_rows(  # NOQA: C901
+    def get_table_rows(
         self,
         code: str,
         table: str,
@@ -243,9 +243,7 @@ class Net(pydantic.BaseModel):
             reverse=reverse,
             show_payer=show_payer,
         )
-        for k in list(payload.keys()):
-            if payload[k] is None:
-                del payload[k]
+        payload = {k: v for k, v in payload.items() if v is not None}
 
         rows = []
         for _ in range(1000):
