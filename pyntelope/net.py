@@ -204,7 +204,7 @@ class Net(pydantic.BaseModel):
         encode_type: str = None,
         lower_bound: str = None,
         upper_bound: str = None,
-        limit: int = None,
+        limit: int = 1000,
         reverse: int = None,
         show_payer: int = None,
         full: bool = False,
@@ -224,10 +224,6 @@ class Net(pydantic.BaseModel):
             Requires multiple requests to be made.
         """
         endpoint = "/v1/chain/get_table_rows"
-
-        # when getting the entire table, the faster, the better
-        if full is True and limit is None:
-            limit = 1000
 
         payload = dict(
             code=code,
