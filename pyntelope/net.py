@@ -304,7 +304,7 @@ class Jungle3Testnet(Net):
 
 
 class Jungle4Testnet(Net):
-    host: pydantic.HttpUrl = "https://jungle4.api.eosnation.io"    
+    host: pydantic.HttpUrl = "https://jungle4.api.eosnation.io"
 
 
 class TelosMainnet(Net):
