@@ -34,6 +34,7 @@ build-backend = "poetry.core.masonry.api"
 addopts = "-vvv --cov-report=term-missing --cov=pyntelope"
 testpaths = ["tests/unit"]
 log_level = "DEBUG"
+markers = "slow: these tests are very slow"
 
 [tool.black]
 line-length = 79

@@ -289,6 +289,7 @@ def test_get_table_rows_full_returns_3000_items(net):
     assert len(resp) == 3000
 
 
+@pytest.mark.slow
 def test_get_table_rows_full_with_limit_raise_value_error(net):
     with pytest.raises(ValueError):
         net.get_table_rows(
