@@ -28,8 +28,16 @@ DEPRECATION_WARNING = (
 
 class Net(pydantic.BaseModel):
     """
-    The net hold the connection information with the blockchain network api.
-    """  # NOQA: D200
+    A Net is an interface to the blockchain network api.
+
+    It holds the connection information and methods for some of its endpoints
+    host: any http url
+        the address of the host you're connecting to
+    headers: dict
+        optional if you want to send a custom header in the request
+    auth: tuple
+        optional if your host requires basic http authentication
+    """
 
     host: pydantic.AnyHttpUrl
     headers: dict = {}
