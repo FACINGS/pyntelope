@@ -345,3 +345,31 @@ def test_given_net_with_specific_header_then_user_agent_is_overwritten(
     requests = httpx_mock.get_requests()
     headers = requests[0].headers
     assert headers["user-agent"] == "aaa"
+
+
+def test_can_be_instantiated_with_auth_param():
+    net = pyntelope.Local(auth=("user", "password"))
+    assert isinstance(net, pyntelope.Net)
+
+
+def test_given_net_with_auth_tuple_then_request_has_authorization_header(
+    httpx_mock,
+):
+    httpx_mock.add_response(json={}, status_code=200)
+    net = pyntelope.Local(auth=("user", "password"))
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+    assert "authorization" in headers
+
+
+def test_given_net_with_auth_then_authorization_headers_match(httpx_mock):
+    httpx_mock.add_response(json={}, status_code=200)
+    net = pyntelope.Local(auth=("user", "password"))
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+
+    auth_header = headers["authorization"]
+    auth_obj = httpx.BasicAuth("user", "password")
+    assert auth_header == auth_obj._auth_header

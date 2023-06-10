@@ -33,6 +33,7 @@ class Net(pydantic.BaseModel):
 
     host: pydantic.AnyHttpUrl
     headers: dict = {}
+    auth: typing.Optional[tuple] = None
 
     def _request(
         self,
@@ -50,7 +51,9 @@ class Net(pydantic.BaseModel):
         headers.update(self.headers)
 
         try:
-            resp = httpx.post(url, json=payload, headers=headers)
+            resp = httpx.post(
+                url, json=payload, headers=headers, auth=self.auth
+            )
         except (
             httpx.TimeoutException,
             httpx.NetworkError,
