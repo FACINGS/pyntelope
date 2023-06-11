@@ -48,7 +48,6 @@ class Net(pydantic.BaseModel):
         *,
         endpoint: str,
         payload: typing.Optional[dict] = dict(),
-        verb: str = "POST",
     ):
         url = urljoin(self.host, endpoint)
 
