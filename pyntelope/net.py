@@ -8,7 +8,7 @@ https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api
 import base64
 import logging
 import types
-from typing import Optional, Type
+from typing import Optional, Type, Union
 from urllib.parse import urljoin
 
 import httpx
@@ -46,11 +46,13 @@ class Net:
         host: str,
         headers: dict = dict(),
         auth: Optional[tuple] = None,
+        client: Optional[Union[httpx.Client, httpx.AsyncClient]] = None,
     ):
         pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
         self.host = host
         self.headers = headers
         self.auth = auth
+        self.client = client
 
     def __new__(cls, *args, **kwargs):
         if hasattr(cls, "default_host"):
@@ -61,11 +63,15 @@ class Net:
                 host: str = cls.default_host,
                 headers: dict = dict(),
                 auth: Optional[tuple] = None,
+                client: Optional[
+                    Union[httpx.Client, httpx.AsyncClient]
+                ] = None,
             ):
                 pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
                 self.host = host
                 self.headers = headers
                 self.auth = auth
+                self.client = client
 
             cls.__init__ = __init__
 
@@ -85,8 +91,12 @@ class Net:
         }
         headers.update(self.headers)
 
+        client = self.client
+        if client is None:
+            client = httpx.Client()
+
         try:
-            resp = httpx.post(
+            resp = client.post(
                 url, json=payload, headers=headers, auth=self.auth
             )
         except (
@@ -321,6 +331,8 @@ class Net:
         return data
 
     def __enter__(self):
+        if self.client is None:
+            self.client = httpx.Client()
         return self
 
     def __exit__(
@@ -329,7 +341,7 @@ class Net:
         exc_value: Optional[BaseException] = None,
         traceback: Optional[types.TracebackType] = None,
     ) -> None:
-        return None
+        self.client.__exit__(exc_type, exc_value, traceback)
 
 
 class WaxTestnet(Net):
