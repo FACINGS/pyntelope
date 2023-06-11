@@ -27,7 +27,7 @@ DEPRECATION_WARNING = (
 )
 
 
-class Net(pydantic.BaseModel):
+class Net:
     """
     A Net is an interface to the blockchain network api.
 
@@ -40,9 +40,36 @@ class Net(pydantic.BaseModel):
         optional if your host requires basic http authentication
     """
 
-    host: pydantic.AnyHttpUrl
-    headers: dict = {}
-    auth: typing.Optional[tuple] = None
+    def __init__(
+        self,
+        *,
+        host: str,
+        headers: dict = dict(),
+        auth: typing.Optional[tuple] = None,
+    ):
+        pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
+        self.host = host
+        self.headers = headers
+        self.auth = auth
+
+    def __new__(cls, *args, **kwargs):
+        if hasattr(cls, "default_host"):
+
+            def __init__(
+                self,
+                *,
+                host: str = cls.default_host,
+                headers: dict = dict(),
+                auth: typing.Optional[tuple] = None,
+            ):
+                pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
+                self.host = host
+                self.headers = headers
+                self.auth = auth
+
+            cls.__init__ = __init__
+
+        return super().__new__(cls)
 
     def _request(
         self,
@@ -306,55 +333,55 @@ class Net(pydantic.BaseModel):
 
 
 class WaxTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.wax.detroitledger.tech"
+    default_host = "https://testnet.wax.detroitledger.tech"
 
 
 class WaxMainnet(Net):
-    host: pydantic.HttpUrl = "https://api.wax.detroitledger.tech"
+    default_host = "https://api.wax.detroitledger.tech"
 
 
 class EosMainnet(Net):
-    host: pydantic.HttpUrl = "https://api.eos.detroitledger.tech"
+    default_host = "https://api.eos.detroitledger.tech"
 
 
 class KylinTestnet(Net):
-    host: pydantic.HttpUrl = "https://kylin.eossweden.org"
+    default_host = "https://kylin.eossweden.org"
 
 
 class Jungle3Testnet(Net):
-    host: pydantic.HttpUrl = "https://jungle3.eossweden.org"
+    default_host = "https://jungle3.eossweden.org"
 
 
 class Jungle4Testnet(Net):
-    host: pydantic.HttpUrl = "https://jungle4.api.eosnation.io"
+    default_host = "https://jungle4.api.eosnation.io"
 
 
 class TelosMainnet(Net):
-    host: pydantic.HttpUrl = "https://telos.caleos.io/"
+    default_host = "https://telos.caleos.io/"
 
 
 class TelosTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.telos.detroitledger.tech"
+    default_host = "https://testnet.telos.detroitledger.tech"
 
 
 class ProtonMainnet(Net):
-    host: pydantic.HttpUrl = "https://proton.cryptolions.io"
+    default_host = "https://proton.cryptolions.io"
 
 
 class ProtonTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.protonchain.com"
+    default_host = "https://testnet.protonchain.com"
 
 
 class UosMainnet(Net):
-    host: pydantic.HttpUrl = "https://uos.eosusa.news"
+    default_host = "https://uos.eosusa.news"
 
 
 class FioMainnet(Net):
-    host: pydantic.HttpUrl = "https://fio.cryptolions.io"
+    default_host = "https://fio.cryptolions.io"
 
 
 class Local(Net):
-    host: pydantic.HttpUrl = "http://127.0.0.1:8888"
+    default_host = "http://127.0.0.1:8888"
 
 
 __all__ = [
