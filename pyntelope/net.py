@@ -7,6 +7,7 @@ https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api
 
 import base64
 import logging
+import types
 import typing
 from urllib.parse import urljoin
 
@@ -291,6 +292,17 @@ class Net(pydantic.BaseModel):
         )
         data = self._request(endpoint=endpoint, payload=payload)
         return data
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        exc_type: typing.Optional[typing.Type[BaseException]] = None,
+        exc_value: typing.Optional[BaseException] = None,
+        traceback: typing.Optional[types.TracebackType] = None,
+    ) -> None:
+        return None
 
 
 class WaxTestnet(Net):

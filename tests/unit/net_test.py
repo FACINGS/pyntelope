@@ -373,3 +373,14 @@ def test_given_net_with_auth_then_authorization_headers_match(httpx_mock):
     auth_header = headers["authorization"]
     auth_obj = httpx.BasicAuth("user", "password")
     assert auth_header == auth_obj._auth_header
+
+
+def test_when_use_net_with_context_syntax_then_net_object_is_created():
+    with pyntelope.Local() as net:
+        assert isinstance(net, pyntelope.Net)
+
+
+def test_when_use_net_with_context_syntax_then_info_returns_dict():
+    with pyntelope.Local() as net:
+        info = net.get_info()
+    assert isinstance(info, dict)
