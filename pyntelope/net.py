@@ -8,7 +8,7 @@ https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api
 import base64
 import logging
 import types
-import typing
+from typing import Optional, Type
 from urllib.parse import urljoin
 
 import httpx
@@ -45,7 +45,7 @@ class Net:
         *,
         host: str,
         headers: dict = dict(),
-        auth: typing.Optional[tuple] = None,
+        auth: Optional[tuple] = None,
     ):
         pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
         self.host = host
@@ -60,7 +60,7 @@ class Net:
                 *,
                 host: str = cls.default_host,
                 headers: dict = dict(),
-                auth: typing.Optional[tuple] = None,
+                auth: Optional[tuple] = None,
             ):
                 pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
                 self.host = host
@@ -75,7 +75,7 @@ class Net:
         self,
         *,
         endpoint: str,
-        payload: typing.Optional[dict] = dict(),
+        payload: Optional[dict] = dict(),
     ):
         url = urljoin(self.host, endpoint)
 
@@ -325,9 +325,9 @@ class Net:
 
     def __exit__(
         self,
-        exc_type: typing.Optional[typing.Type[BaseException]] = None,
-        exc_value: typing.Optional[BaseException] = None,
-        traceback: typing.Optional[types.TracebackType] = None,
+        exc_type: Optional[Type[BaseException]] = None,
+        exc_value: Optional[BaseException] = None,
+        traceback: Optional[types.TracebackType] = None,
     ) -> None:
         return None
 
