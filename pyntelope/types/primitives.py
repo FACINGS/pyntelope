@@ -7,6 +7,7 @@ import re
 import struct
 
 import pydantic
+from typing_extensions import Annotated
 
 from .base import Primitive
 
@@ -131,7 +132,7 @@ class Asset(Primitive):
             )  # combine everything and place decimal in correct position
         return cls(value=value)
 
-    @pydantic.validator("value")
+    @pydantic.field_validator("value")
     def amount_must_be_in_the_valid_range(cls, v):
         value_list = str(v).strip().split(" ")
         if len(value_list) != 2:
@@ -142,7 +143,7 @@ class Asset(Primitive):
             raise ValueError(msg)
         return v
 
-    @pydantic.validator("value")
+    @pydantic.field_validator("value")
     def check_for_frac_digit_if_decimal_exists(cls, v):
         stripped_value = v.strip()
         if "." in stripped_value:
@@ -161,7 +162,7 @@ class Asset(Primitive):
                 raise ValueError(msg)
         return v
 
-    @pydantic.validator("value", allow_reuse=True)
+    @pydantic.field_validator("value")
     def check_if_amount_is_valid(cls, v):
         stripped_value = v.strip()
         amount = float(stripped_value.split(" ")[0])
@@ -170,7 +171,7 @@ class Asset(Primitive):
             raise ValueError(msg)
         return v
 
-    @pydantic.validator("value", allow_reuse=True)
+    @pydantic.field_validator("value")
     def check_if_name_is_valid(cls, v):
         stripped_value = v.strip()
         name = stripped_value.split(" ")[1]
@@ -204,7 +205,7 @@ class Bytes(Primitive):
 
 
 class Int8(Primitive):
-    value: pydantic.conint(ge=-128, lt=128)
+    value: Annotated[int, pydantic.Field(ge=-128, lt=128)]
 
     def __bytes__(self):
         return struct.pack("<b", self.value)
@@ -217,7 +218,7 @@ class Int8(Primitive):
 
 
 class Int16(Primitive):
-    value: pydantic.conint(ge=-(2**15), lt=2**15)
+    value: Annotated[int, pydantic.Field(ge=-(2**15), lt=2**15)]
 
     def __bytes__(self):
         return struct.pack("<h", self.value)
@@ -230,7 +231,7 @@ class Int16(Primitive):
 
 
 class Int32(Primitive):
-    value: pydantic.conint(ge=-(2**31), lt=2**31)
+    value: Annotated[int, pydantic.Field(ge=-(2**31), lt=2**31)]
 
     def __bytes__(self):
         return struct.pack("<i", self.value)
@@ -243,7 +244,7 @@ class Int32(Primitive):
 
 
 class Int64(Primitive):
-    value: pydantic.conint(ge=-(2**63), lt=2**63)
+    value: Annotated[int, pydantic.Field(ge=-(2**63), lt=2**63)]
 
     def __bytes__(self):
         return struct.pack("<q", self.value)
@@ -288,10 +289,13 @@ class Float64(Primitive):
 
 class Name(Primitive):
     # regex = has at least one "non-dot" char
-    value: pydantic.constr(
-        max_length=13,
-        regex=r"^[\.a-z1-5]*[a-z1-5]+[\.a-z1-5]*$|^(?![\s\S])",  # NOQA: F722
-    )
+    value: Annotated[
+        str,
+        pydantic.types.StringConstraints(
+            max_length=13,
+            pattern=r"^[\.a-z1-5]*[a-z1-5]+[\.a-z1-5]*$|^(?![\s\S])",
+        ),
+    ]
 
     def __eq__(self, other):
         """Equality diregards dots in names."""
@@ -299,7 +303,7 @@ class Name(Primitive):
             return False
         return self.value.replace(".", "") == other.value.replace(".", "")
 
-    @pydantic.validator("value")
+    @pydantic.field_validator("value")
     def last_char_restriction(cls, v):
         if len(v) == 13:
             allowed = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "."}
@@ -360,6 +364,8 @@ class Name(Primitive):
             s = s.strip(".")
         return s
 
+    model_config = pydantic.ConfigDict(regex_engine="python-re")
+
 
 class String(Primitive):
     value: str
@@ -370,7 +376,7 @@ class String(Primitive):
         bytes_ = bytes(Varuint32(value=length)) + bytes_
         return bytes_
 
-    @pydantic.validator("value")
+    @pydantic.field_validator("value")
     def must_not_contain_multi_utf_char(cls, v):
         if len(v) < len(v.encode("utf8")):
             msg = (
@@ -403,7 +409,7 @@ class Symbol(Primitive):
 
     value: str
 
-    @pydantic.validator("value", allow_reuse=True)
+    @pydantic.field_validator("value")
     def name_must_be_of_valid_length(cls, v):
         name = v.split(",")[1]
         match = re.search("^[A-Z]{1,7}$", name)
@@ -412,7 +418,7 @@ class Symbol(Primitive):
             raise ValueError(msg)
         return v
 
-    @pydantic.validator("value", allow_reuse=True)
+    @pydantic.field_validator("value")
     def precision_must_be_in_the_valid_range(cls, v):
         precision = int(v.split(",")[0])
         if precision < 0 or precision > 16:
@@ -460,7 +466,7 @@ class Symbol(Primitive):
 
 
 class Uint8(Primitive):
-    value: pydantic.conint(ge=0, lt=256)  # 2 ** 8
+    value: Annotated[int, pydantic.Field(ge=0, lt=256)]  # 2 ** 8
 
     def __bytes__(self):
         return struct.pack("<B", self.value)
@@ -473,7 +479,7 @@ class Uint8(Primitive):
 
 
 class Uint16(Primitive):
-    value: pydantic.conint(ge=0, lt=65536)  # 2 ** 16
+    value: Annotated[int, pydantic.Field(ge=0, lt=65536)]  # 2 ** 16
 
     def __bytes__(self):
         return struct.pack("<H", self.value)
@@ -486,7 +492,7 @@ class Uint16(Primitive):
 
 
 class Uint32(Primitive):
-    value: pydantic.conint(ge=0, lt=4294967296)  # 2 ** 32
+    value: Annotated[int, pydantic.Field(ge=0, lt=4294967296)]  # 2 ** 32
 
     def __bytes__(self):
         return struct.pack("<I", self.value)
@@ -499,7 +505,9 @@ class Uint32(Primitive):
 
 
 class Uint64(Primitive):
-    value: pydantic.conint(ge=0, lt=18446744073709551616)  # 2 ** 64
+    value: Annotated[
+        int, pydantic.Field(ge=0, lt=18446744073709551616)
+    ]  # 2 ** 64
 
     def __bytes__(self):
         return struct.pack("<Q", self.value)
@@ -521,7 +529,7 @@ class TimePoint(Primitive):
 
     value: dt.datetime
 
-    @pydantic.validator("value")
+    @pydantic.field_validator("value")
     def max_precision_is_miliseconds(cls, v):
         if v.microsecond % 1000 != 0:
             msg = "The smallest time unit allowed is miliseconds"
@@ -565,7 +573,7 @@ class UnixTimestamp(Primitive):
 
     value: dt.datetime
 
-    @pydantic.validator("value")
+    @pydantic.field_validator("value")
     def remove_everything_bellow_seconds(cls, v):
         new_v = v.replace(microsecond=0)
         return new_v
@@ -584,7 +592,7 @@ class UnixTimestamp(Primitive):
 
 
 class Varuint32(Primitive):
-    value: pydantic.conint(ge=0, le=20989371979)
+    value: Annotated[int, pydantic.Field(ge=0, le=20989371979)]
 
     def __bytes__(self):
         bytes_ = b""

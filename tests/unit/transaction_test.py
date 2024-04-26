@@ -13,7 +13,7 @@ from .contracts.valid import hello as valid_contract
 
 
 def test_create_authorization_using_dict():
-    auth = pyntelope.Authorization.parse_obj(
+    auth = pyntelope.Authorization.model_validate(
         {"actor": "aaa", "permission": "active"}
     )
     assert isinstance(auth, pyntelope.Authorization)
@@ -30,7 +30,7 @@ def test_create_authorization_requires_actor_len_lt_13():
 
 
 def test_authorization_is_immutable(auth):
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         auth.actor = "bbb"
 
 
@@ -265,7 +265,7 @@ def action_clear():
 
 def test_action_fields_are_immutable(action_clear):
     immutables = (str, int, bool, float, tuple)
-    for field_name in action_clear.__fields__:
+    for field_name in action_clear.model_fields.keys():
         field = getattr(action_clear, field_name)
         assert isinstance(field, immutables)
 

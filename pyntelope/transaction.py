@@ -8,6 +8,7 @@ import struct
 from typing import List, Tuple
 
 import pydantic
+from typing_extensions import Annotated
 
 from . import types, utils
 from .net import Net
@@ -21,8 +22,12 @@ class Authorization(pydantic.BaseModel):
     permission: str
     """
 
-    actor: pydantic.constr(min_length=1, max_length=13)
-    permission: pydantic.constr(min_length=1, max_length=13)
+    actor: Annotated[
+        str, pydantic.types.StringConstraints(min_length=1, max_length=13)
+    ]
+    permission: Annotated[
+        str, pydantic.types.StringConstraints(min_length=1, max_length=13)
+    ]
 
     def __bytes__(self):
         bytes_ = b""
@@ -32,9 +37,7 @@ class Authorization(pydantic.BaseModel):
         bytes_ += bytes(permission)
         return bytes_
 
-    class Config:
-        extra = "forbid"
-        frozen = True
+    model_config = pydantic.ConfigDict(extra="forbid", frozen=True)
 
 
 class Data(pydantic.BaseModel):
@@ -90,9 +93,7 @@ class Data(pydantic.BaseModel):
     def __bytes__(self):
         return bytes(self.value)
 
-    class Config:
-        extra = "forbid"
-        frozen = True
+    model_config = pydantic.ConfigDict(extra="forbid", frozen=True)
 
 
 class Action(pydantic.BaseModel):
@@ -105,12 +106,12 @@ class Action(pydantic.BaseModel):
     authorization: list[Action]
     """
 
-    account: pydantic.constr(max_length=13)
+    account: Annotated[str, pydantic.types.StringConstraints(max_length=13)]
     name: str
-    authorization: pydantic.conlist(Authorization, min_items=1, max_items=10)
+    authorization: pydantic.conlist(Authorization, min_length=1, max_length=10)
     data: List[Data]
 
-    @pydantic.validator("data", "authorization")
+    @pydantic.field_validator("data", "authorization")
     def transform_to_tuple(cls, v):
         new_v = tuple(v)
         return new_v
@@ -129,10 +130,9 @@ class Action(pydantic.BaseModel):
         name = self.__class__.__name__
         raise TypeError(f"cannot convert '{name}' object to bytes")
 
-    class Config:
-        extra = "forbid"
-        frozen = True
-        arbitrary_types_allowed = True
+    model_config = pydantic.ConfigDict(
+        extra="forbid", frozen=True, arbitrary_types_allowed=True
+    )
 
 
 class LinkedAction(Action):
@@ -145,9 +145,9 @@ class LinkedAction(Action):
     authorization: list[Authorization]
     """
 
-    account: pydantic.constr(max_length=13)
+    account: Annotated[str, pydantic.types.StringConstraints(max_length=13)]
     name: str
-    authorization: pydantic.conlist(Authorization, min_items=1, max_items=10)
+    authorization: pydantic.conlist(Authorization, min_length=1, max_length=10)
     data: List[Data]
     net: Net
 
@@ -179,7 +179,7 @@ class LinkedAction(Action):
 
 def _endian_reverse_u32(i: int) -> int:
     i = i & 0xFFFFFFFF
-    r = (((i >> 0x18) & 0xFF)) | (((i >> 0x10) & 0xFF) << 0x08) | (((i >> 0x08) & 0xFF) << 0x10) | (((i) & 0xFF) << 0x18)  # NOQA BLK100, E501
+    r = (((i >> 0x18) & 0xFF)) | (((i >> 0x10) & 0xFF) << 0x08) | (((i >> 0x08) & 0xFF) << 0x10) | (((i) & 0xFF) << 0x18)  # NOQA: BLK100, E501
     return r
 
 
@@ -206,13 +206,13 @@ class Transaction(pydantic.BaseModel):
     chain_id: Optional[str]
     """
 
-    actions: pydantic.conlist(Action, min_items=1, max_items=10)
-    expiration_delay_sec: pydantic.conint(ge=0) = 600
-    delay_sec: pydantic.conint(ge=0) = 0
-    max_cpu_usage_ms: pydantic.conint(ge=0) = 0
-    max_net_usage_words: pydantic.conint(ge=0) = 0
+    actions: pydantic.conlist(Action, min_length=1, max_length=10)
+    expiration_delay_sec: Annotated[int, pydantic.Field(ge=0)] = 600
+    delay_sec: Annotated[int, pydantic.Field(ge=0)] = 0
+    max_cpu_usage_ms: Annotated[int, pydantic.Field(ge=0)] = 0
+    max_net_usage_words: Annotated[int, pydantic.Field(ge=0)] = 0
 
-    @pydantic.validator("actions")
+    @pydantic.field_validator("actions")
     def _transform_to_tuple(cls, v):
         new_v = tuple(v)
         return new_v
@@ -245,10 +245,9 @@ class Transaction(pydantic.BaseModel):
 
         return new_trans
 
-    class Config:
-        extra = "forbid"
-        frozen = True
-        arbitrary_types_allowed = True
+    model_config = pydantic.ConfigDict(
+        extra="forbid", frozen=True, arbitrary_types_allowed=True
+    )
 
 
 class LinkedTransaction(Transaction):
@@ -258,11 +257,11 @@ class LinkedTransaction(Transaction):
     It becomes a SignedTransaction when you sign it.
     """
 
-    actions: pydantic.conlist(LinkedAction, min_items=1, max_items=10)
+    actions: pydantic.conlist(LinkedAction, min_length=1, max_length=10)
     net: Net
     chain_id: str
-    ref_block_num: str
-    ref_block_prefix: str
+    ref_block_num: int
+    ref_block_prefix: int
     expiration: dt.datetime
 
     def __bytes__(self):
@@ -326,9 +325,9 @@ class SignedTransaction(LinkedTransaction):
     Also you can sign it again.
     """
 
-    signatures: pydantic.conlist(str, min_items=1, max_items=10)
+    signatures: pydantic.conlist(str, min_length=1, max_length=10)
 
-    @pydantic.validator("signatures")
+    @pydantic.field_validator("signatures")
     def _transform_to_tuple(cls, v):
         new_v = tuple(v)
         return new_v

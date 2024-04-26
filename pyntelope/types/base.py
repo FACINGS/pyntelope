@@ -19,9 +19,7 @@ class AntelopeType(pydantic.BaseModel, ABC):
         bytes_ = bytes(self)
         return len(bytes_)
 
-    class Config:
-        extra = "forbid"
-        frozen = True
+    model_config = pydantic.ConfigDict(extra="forbid", frozen=True)
 
 
 class Primitive(AntelopeType, ABC):

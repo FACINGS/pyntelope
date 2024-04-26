@@ -42,13 +42,14 @@ class Array(Composte):
     values: tuple
     type_: type
 
-    @pydantic.validator("type_")
+    @pydantic.field_validator("type_")
     def must_be_subclass_of_antelope(cls, v):
         if not issubclass(v, AntelopeType):
             raise ValueError("Type must be subclass of AntelopeType")
         return v
 
-    @pydantic.root_validator
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def all_values_must_be_instances_of_type(cls, all_values):
         type_ = all_values["type_"]
         values = all_values["values"]
@@ -58,7 +59,7 @@ class Array(Composte):
                     f"{value=} is of type={type(value)} "
                     f"but instance of {type_} was expected"
                 )
-                raise TypeError(msg)
+                raise ValueError(msg)
         return all_values
 
     @classmethod
@@ -120,9 +121,9 @@ class Abi(Composte):
     ricardian_clauses: Array
     error_messages: Array
     abi_extensions: Array
-    variants: Optional[Array]
-    action_results: Optional[Array]
-    kv_tables: Optional[Array]
+    variants: Optional[Array] = None
+    action_results: Optional[Array] = None
+    kv_tables: Optional[Array] = None
 
     @classmethod
     def from_dict(cls, /, d: dict):

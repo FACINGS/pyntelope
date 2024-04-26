@@ -48,7 +48,7 @@ class Net:
         auth: Optional[tuple] = None,
         client: Optional[Union[httpx.Client, httpx.AsyncClient]] = None,
     ):
-        pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
+        pydantic.TypeAdapter(pydantic.AnyHttpUrl).validate_python(host)
         self.host = host
         self.headers = headers
         self.auth = auth
@@ -67,7 +67,7 @@ class Net:
                     Union[httpx.Client, httpx.AsyncClient]
                 ] = None,
             ):
-                pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
+                pydantic.TypeAdapter(pydantic.AnyHttpUrl).validate_python(host)
                 self.host = host
                 self.headers = headers
                 self.auth = auth
