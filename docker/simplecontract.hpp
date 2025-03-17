@@ -23,6 +23,8 @@ CONTRACT simplecontract : public eosio::contract {
         ACTION tuintsixfour(uint64_t var);
         ACTION tfltthirttwo(float_t var);
         ACTION tfltsixfour(double_t var);
+        ACTION ttimepoint(time_point var);
+        ACTION filllongtbl();
 
     private:
         TABLE messages {
@@ -30,5 +32,12 @@ CONTRACT simplecontract : public eosio::contract {
             string  text;
             auto primary_key() const { return user.value; }
         };
-    typedef multi_index<name("messages"), messages> messages_table;
+        typedef multi_index<name("messages"), messages> messages_table;
+
+        TABLE longtable {
+            uint16_t    id;
+            uint16_t    value;
+            auto primary_key() const { return id; }
+        };
+        typedef multi_index<name("longtable"), longtable> longtable_table;
 };

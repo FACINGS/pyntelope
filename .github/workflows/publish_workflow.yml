@@ -1,0 +1,35 @@
+name: Build and Publish Workflow
+on:
+  workflow_run:
+    workflows: ['Automated Tests Workflow']
+    types: ['completed']
+    branches: ['main']
+
+jobs:
+  build-and-publish-to-pypi:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Build
+        run: |
+          python3.9 -m venv .venv
+          source .venv/bin/activate
+          pip install poetry==1.8.5
+          poetry install --no-dev
+          poetry build
+
+      - name: Publish
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          source .venv/bin/activate
+          poetry publish --username=__token__ --password=$PYPI_TOKEN
+

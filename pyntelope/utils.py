@@ -99,7 +99,7 @@ def _deterministic_generate_k_nonce(message_hash, key, nonce):
     try:
         key_encoded = _encode_privkey(key, "bin")
     except AssertionError:
-        raise ValueError("Error in private key provided: {key=}")
+        raise ValueError(f"Error in private key provided: {key=}")
 
     msg_int = _decode(message_hash, 256)
     message_hash = _encode(msg_int + nonce, 256, 32)

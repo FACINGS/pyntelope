@@ -1,4 +1,5 @@
 import re
+from unittest.mock import Mock, patch
 
 import httpx
 import pydantic
@@ -269,6 +270,34 @@ def test_get_table_rows_with_strange_scope_returns_empty_list(net):
     assert resp == []
 
 
+def test_get_table_rows_returns_non_empty_list(net):
+    resp = net.get_table_rows(code="user2", table="longtable", scope="user2")
+    assert len(resp) > 0
+
+
+def test_get_table_rows_with_limit_returns_limit_items(net):
+    limit = 15
+    resp = net.get_table_rows(
+        code="user2", table="longtable", scope="user2", limit=limit
+    )
+    assert len(resp) == limit
+
+
+def test_get_table_rows_full_returns_3000_items(net):
+    resp = net.get_table_rows(
+        code="user2", table="longtable", scope="user2", full=True
+    )
+    assert len(resp) == 3000
+
+
+@pytest.mark.slow
+def test_get_table_rows_full_with_limit_raise_value_error(net):
+    with pytest.raises(ValueError):
+        net.get_table_rows(
+            code="user2", table="longtable", scope="user2", full=True, limit=1
+        )
+
+
 def test_get_info_request_headers_include_pyntelope_user_agent(
     net, httpx_mock
 ):
@@ -317,3 +346,150 @@ def test_given_net_with_specific_header_then_user_agent_is_overwritten(
     requests = httpx_mock.get_requests()
     headers = requests[0].headers
     assert headers["user-agent"] == "aaa"
+
+
+def test_can_be_instantiated_with_auth_param():
+    net = pyntelope.Local(auth=("user", "password"))
+    assert isinstance(net, pyntelope.Net)
+
+
+def test_given_net_with_auth_tuple_then_request_has_authorization_header(
+    httpx_mock,
+):
+    httpx_mock.add_response(json={}, status_code=200)
+    net = pyntelope.Local(auth=("user", "password"))
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+    assert "authorization" in headers
+
+
+def test_given_net_with_auth_then_authorization_headers_match(httpx_mock):
+    httpx_mock.add_response(json={}, status_code=200)
+    net = pyntelope.Local(auth=("user", "password"))
+    net.get_info()
+    requests = httpx_mock.get_requests()
+    headers = requests[0].headers
+
+    auth_header = headers["authorization"]
+    auth_obj = httpx.BasicAuth("user", "password")
+    assert auth_header == auth_obj._auth_header
+
+
+def test_when_use_net_with_context_syntax_then_net_object_is_created():
+    with pyntelope.Local() as net:
+        assert isinstance(net, pyntelope.Net)
+
+
+def test_when_use_net_with_context_syntax_then_info_returns_dict():
+    with pyntelope.Local() as net:
+        info = net.get_info()
+    assert isinstance(info, dict)
+
+
+def test_net_accepts_client_object_in_initialization():
+    with httpx.Client() as client:
+        net = pyntelope.Local(client=client)
+    assert isinstance(net, pyntelope.Net)
+
+
+def test_when_initialize_net_with_client_then_client_attribute_is_the_same():
+    with httpx.Client() as client:
+        net = pyntelope.Local(client=client)
+        assert id(net.client) == id(client)
+
+
+def test_when_initialize_with_context_manager_then_client_attr_is_the_same():
+    with httpx.Client() as client:
+        with pyntelope.Local(client=client) as net:
+            assert id(net.client) == id(client)
+
+
+def test_when_initialize_with_context_manager_then_auto_create_client():
+    with pyntelope.Local() as net:
+        assert isinstance(net.client, httpx.Client)
+
+
+def test_when_inside_the_context_manager_then_can_get_info():
+    with pyntelope.Local() as net:
+        info = net.get_info()
+        assert isinstance(info, dict)
+
+
+def test_when_outside_the_context_manager_then_get_info_raises_error():
+    with pyntelope.Local() as net:
+        ...
+    with pytest.raises(RuntimeError):
+        _ = net.get_info()
+
+
+def test_given_client_when_outside_the_context_manager_then_get_info_raises_error():  # NOQA: E501
+    with httpx.Client() as client:
+        with pyntelope.Local(client=client) as net:
+            ...
+        with pytest.raises(RuntimeError):
+            _ = net.get_info()
+
+
+def test_given_client_and_context_manager_close_both_dont_raise_errors():
+    with httpx.Client() as client:
+        with pyntelope.Local(client=client):
+            ...
+
+
+def test_given_no_client_when_make_two_requests_then_client_factory_is_called_twice():  # NOQA: E501
+    with patch("httpx.Client") as m:
+        mock_client = Mock()
+        m.return_value = mock_client
+
+        response = Mock()
+        response.status_code = 200
+        mock_client.post.return_value = response
+
+        net = pyntelope.Local()
+        net.get_info()
+        net.get_info()
+        assert m.call_count == 2
+
+
+def test_given_client_when_make_two_requests_then_client_factory_is_called_0_times():  # NOQA: E501
+    with patch("httpx.Client") as mock_httpx_client:
+        mock_client = Mock()
+
+        response = Mock()
+        response.status_code = 200
+        mock_client.post.return_value = response
+
+        net = pyntelope.Local(client=mock_client)
+        net.get_info()
+        net.get_info()
+        assert mock_httpx_client.call_count == 0
+
+
+def test_given_net_with_context_manager_when_make_two_requests_then_client_post_is_called_twice():  # NOQA: E501
+    mock_client = Mock()
+    mock_client.__exit__ = Mock()
+
+    response = Mock()
+    response.status_code = 200
+    mock_client.post.return_value = response
+    with pyntelope.Local(client=mock_client) as net:
+        net.get_info()
+        net.get_info()
+
+    assert mock_client.post.call_count == 2
+
+
+def test_given_net_with_context_manager_when_make_two_requests_then_client_factory_is_called_0():  # NOQA: E501
+    with patch("httpx.Client") as mock_httpx_client:
+        mock_client = Mock()
+        mock_client.__exit__ = Mock()
+
+        response = Mock()
+        response.status_code = 200
+        mock_client.post.return_value = response
+        with pyntelope.Local(client=mock_client) as net:
+            net.get_info()
+            net.get_info()
+
+        assert mock_httpx_client.call_count == 0

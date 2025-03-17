@@ -128,6 +128,11 @@ When ready, just:
 ```
 pytest
 ```
+Some tests are marked as "slow".  
+You can skip them and run the test suite faster with:
+```
+pytest -m "not slow"
+```
 
 
 

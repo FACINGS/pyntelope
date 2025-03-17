@@ -1,11 +1,11 @@
-name: Main Workflow
+name: Automated Tests Workflow
 on: ['push', 'pull_request', 'workflow_dispatch']
 jobs:
   automated-tests:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-18.04, ubuntu-22.04]
+        os: [ubuntu-20.04, ubuntu-22.04]
         python-version: ['3.8', '3.9', '3.10', '3.11']
 
     name: Setup python ${{ matrix.python-version }} on ${{ matrix.os }}
@@ -14,6 +14,7 @@ jobs:
 
     steps:
       - run: echo "The job was automatically triggered by a ${{ github.event_name }} event"
+
       - run: echo "This job is now running on a ${{ runner.os }} server"
       - run: echo "The name of the branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
 
@@ -49,10 +50,9 @@ jobs:
           flake8 pyntelope/
 
       - name: Run docker image
-        run: docker-compose up --build -d
+        run: docker compose up --build -d
 
       - name: Run unit tests
         run: |
           source .venv/bin/activate
           pytest
-

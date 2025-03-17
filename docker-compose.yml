@@ -15,7 +15,7 @@ x-common: &commons
 services:
     blockproducer:
         build: .
-        image: leap:3.1.0
+        image: leap:3.1.3
         container_name: blockproducer
         command: ["bash", "/docker/run_leap.sh"]
 
@@ -27,15 +27,15 @@ services:
 
         healthcheck:
             test: ["CMD", "curl", "http://localhost:8888/v1/chain/get_info"]
-            interval: 10s
-            timeout: 10s
+            interval: 2s
+            timeout: 2s
             retries: 3
             start_period: 60s
 
 
     deployer:
         build: .
-        image: leap:3.1.0
+        image: leap:3.1.3
         container_name: deployer
         command: ["bash", "/docker/deploy.sh"]
 

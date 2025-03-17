@@ -511,6 +511,50 @@ class Uint64(Primitive):
         return cls(value=value)
 
 
+class TimePoint(Primitive):
+    """
+    Serialize a datetime.
+
+    Max precision is in miliseconds, anything bellow is rejected
+    Considers UTC time
+    """
+
+    value: dt.datetime
+
+    @pydantic.validator("value")
+    def max_precision_is_miliseconds(cls, v):
+        if v.microsecond % 1000 != 0:
+            msg = "The smallest time unit allowed is miliseconds"
+            raise ValueError(msg)
+        return v
+
+    def _to_number(self) -> int:
+        epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
+        since_epoch = self.value - epoch
+        n = since_epoch.total_seconds() * 1_000_000
+        return n
+
+    @classmethod
+    def _from_number(cls, *, n: int):
+        epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
+        delta = dt.timedelta(microseconds=n)
+        datetime = epoch + delta
+        obj = cls(datetime)
+        return obj
+
+    def __bytes__(self):
+        n = self._to_number()
+        uint64_secs = Uint64(n)
+        bytes_ = bytes(uint64_secs)
+        return bytes_
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        n = Uint64.from_bytes(bytes_).value
+        obj = cls._from_number(n=n)
+        return obj
+
+
 class UnixTimestamp(Primitive):
     """
     Serialize a datetime.

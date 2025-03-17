@@ -169,6 +169,61 @@ values = [
         "99 WAX",
         b"c\x00\x00\x00\x00\x00\x00\x00\x00WAX\x00\x00\x00\x00",
     ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0),
+        b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0),
+        b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 0),
+        b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 1000),
+        b"\xe8\x03\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 2000),
+        b"\xd0\x07\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 3000),
+        b"\xb8\x0b\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 0, 4000),
+        b"\xa0\x0f\x00\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(1970, 1, 1, 0, 0, 1),
+        b"@B\x0f\x00\x00\x00\x00\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(2040, 12, 31, 23, 59),
+        b"\x00Y\x14\xef\xd2\xf5\x07\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(2040, 12, 31, 23, 59, 0),
+        b"\x00Y\x14\xef\xd2\xf5\x07\x00",
+    ),
+    (
+        types.TimePoint,
+        dt.datetime(2021, 8, 26, 14, 1, 47),
+        b"\xc0\x08\xbd\xcev\xca\x05\x00",
+    ),
 ]
 
 
@@ -326,6 +381,25 @@ test_serialization = [
     (types.Uint64, "tuintsixfour", 1),
     (types.Uint64, "tuintsixfour", 2**64 - 2),
     (types.Uint64, "tuintsixfour", 2**64 - 1),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 1000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 2000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 3000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 4000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 997000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 998000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 0, 999000)),
+    (types.TimePoint, "ttimepoint", dt.datetime(1970, 1, 1, 0, 0, 1)),
+    (types.TimePoint, "ttimepoint", dt.datetime(2040, 12, 31, 23, 59)),
+    (types.TimePoint, "ttimepoint", dt.datetime(2040, 12, 31, 23, 59, 0)),
+    (types.TimePoint, "ttimepoint", dt.datetime(2021, 8, 26, 14, 1, 47)),
+    (
+        types.TimePoint,
+        "ttimepoint",
+        dt.datetime(2021, 8, 26, 14, 1, 47, 184000),
+    ),
 ]
 
 
@@ -333,13 +407,18 @@ test_serialization = [
 def test_pyntelope_serialization_vs_leap_serialization(
     class_, action_, value, net
 ):
+    if class_ == types.TimePoint:
+        value = value.isoformat(timespec="microseconds")[:-3]
+        print(value)
+
     nodeos_serialization = net.abi_json_to_bin(
         account_name="user2",
         action=action_,
         json={"var": value},
     )
     local_serialization = bytes(class_(value))
-    assert nodeos_serialization == local_serialization
+    err_msg = f"{value=}; {nodeos_serialization=}; {local_serialization=}"
+    assert nodeos_serialization == local_serialization, err_msg
 
 
 error_values = [
@@ -397,6 +476,10 @@ error_values = [
     (types.Asset, "99"),
     (types.Asset, "99. WAXXXXXX"),
     (types.Asset, "99."),
+    (types.TimePoint, dt.datetime(1970, 1, 1, 0, 0, 0, 999997)),
+    (types.TimePoint, dt.datetime(1970, 1, 1, 0, 0, 0, 999998)),
+    (types.TimePoint, dt.datetime(1970, 1, 1, 0, 0, 0, 999999)),
+    (types.TimePoint, dt.datetime(2021, 8, 26, 14, 1, 47, 184549)),
 ]
 
 
@@ -452,7 +535,7 @@ def test_array_to_dict(type_, input_, bytes_):
 
 @pytest.mark.parametrize("class_,input_", error_values)
 def test_array_validation_errors(class_, input_):
-    if type(input_) in {int, float}:
+    if type(input_) in {int, float, dt.datetime}:
         input_ = (input_,)
     with pytest.raises(pydantic.ValidationError):
         types.Array(type_=class_, values=tuple(input_))

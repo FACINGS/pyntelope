@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyntelope"
-version = "0.8.0"
+version = "0.8.6"
 description = "Interact with Antelope blockchains"
 authors = ["Team <pyntelope@facings.io>"]
 homepage = "https://github.com/FACINGS/pyntelope"
@@ -34,6 +34,7 @@ build-backend = "poetry.core.masonry.api"
 addopts = "-vvv --cov-report=term-missing --cov=pyntelope"
 testpaths = ["tests/unit"]
 log_level = "DEBUG"
+markers = "slow: these tests are very slow"
 
 [tool.black]
 line-length = 79

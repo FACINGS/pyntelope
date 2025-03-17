@@ -6,7 +6,9 @@ https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api
 """
 
 import base64
-import typing
+import logging
+import types
+from typing import Optional, Type, Union
 from urllib.parse import urljoin
 
 import httpx
@@ -15,29 +17,88 @@ import pydantic
 from pyntelope import exc
 from pyntelope._version import __version__
 
+logger = logging.getLogger(__name__)
 
-class Net(pydantic.BaseModel):
+DEPRECATION_WARNING = (
+    "The abi_bin_to_json and abi_json_to_bin conversion APIs are "
+    "both deprecated as of the Leap v3.1 release. "
+    "(https://eosnetwork.com/blog/leap-v3-1-release-features/)"
+    "They will also be removed from pyntelope in a future version."
+)
+
+
+class Net:
     """
-    The net hold the connection information with the blockchain network api.
-    """  # NOQA: D200
+    A Net is an interface to the blockchain network api.
 
-    host: pydantic.AnyHttpUrl
-    headers: dict = {}
+    It holds the connection information and methods for some of its endpoints
+    host: any http url
+        the address of the host you're connecting to
+    headers: dict
+        optional if you want to send a custom header in the request
+    auth: tuple
+        optional if your host requires basic http authentication
+    """
+
+    def __init__(
+        self,
+        *,
+        host: str,
+        headers: dict = dict(),
+        auth: Optional[tuple] = None,
+        client: Optional[Union[httpx.Client, httpx.AsyncClient]] = None,
+    ):
+        pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
+        self.host = host
+        self.headers = headers
+        self.auth = auth
+        self.client = client
+
+    def __new__(cls, *args, **kwargs):
+        if hasattr(cls, "default_host"):
+
+            def __init__(
+                self,
+                *,
+                host: str = cls.default_host,
+                headers: dict = dict(),
+                auth: Optional[tuple] = None,
+                client: Optional[
+                    Union[httpx.Client, httpx.AsyncClient]
+                ] = None,
+            ):
+                pydantic.parse_obj_as(pydantic.AnyHttpUrl, host)
+                self.host = host
+                self.headers = headers
+                self.auth = auth
+                self.client = client
+
+            cls.__init__ = __init__
+
+        return super().__new__(cls)
 
     def _request(
         self,
         *,
         endpoint: str,
-        payload: typing.Optional[dict] = dict(),
-        verb: str = "POST",
+        payload: Optional[dict] = dict(),
     ):
         url = urljoin(self.host, endpoint)
 
-        headers = {"user-agent": f"pyntelope/{__version__}"}
+        headers = {
+            "user-agent": f"pyntelope/{__version__}",
+            "content-type": "application/json",
+        }
         headers.update(self.headers)
 
+        client = self.client
+        if client is None:
+            client = httpx.Client()
+
         try:
-            resp = httpx.post(url, json=payload, headers=headers)
+            resp = client.post(
+                url, json=payload, headers=headers, auth=self.auth
+            )
         except (
             httpx.TimeoutException,
             httpx.NetworkError,
@@ -57,6 +118,7 @@ class Net(pydantic.BaseModel):
     def abi_bin_to_json(
         self, *, account_name: str, action: str, bytes: dict
     ) -> dict:
+        logger.warning(DEPRECATION_WARNING)
         endpoint = "/v1/chain/abi_bin_to_json"
         payload = dict(code=account_name, action=action, binargs=bytes.hex())
         data = self._request(endpoint=endpoint, payload=payload)
@@ -70,6 +132,7 @@ class Net(pydantic.BaseModel):
 
         https://developers.eos.io/manuals/eos/latest/nodeos/plugins/chain_api_plugin/api-reference/index#operation/abi_json_to_bin
         """
+        logger.warning(DEPRECATION_WARNING)
         endpoint = "/v1/chain/abi_json_to_bin"
         payload = dict(code=account_name, action=action, args=json)
         data = self._request(endpoint=endpoint, payload=payload)
@@ -189,9 +252,10 @@ class Net(pydantic.BaseModel):
         encode_type: str = None,
         lower_bound: str = None,
         upper_bound: str = None,
-        limit: int = None,
+        limit: int = 1000,
         reverse: int = None,
         show_payer: int = None,
+        full: bool = False,
     ):
         """
         Return a list with the rows in the table.
@@ -203,8 +267,13 @@ class Net(pydantic.BaseModel):
         -----------
         json: bool = True
             Get the response as json
+        full: bool = True
+            Get the full table.
+            Requires multiple requests to be made.
+            The maximum number of requests made is 1000.
         """
         endpoint = "/v1/chain/get_table_rows"
+
         payload = dict(
             code=code,
             table=table,
@@ -219,14 +288,25 @@ class Net(pydantic.BaseModel):
             reverse=reverse,
             show_payer=show_payer,
         )
-        for k in list(payload.keys()):
-            if payload[k] is None:
-                del payload[k]
-        data = self._request(endpoint=endpoint, payload=payload)
-        if "rows" in data:
-            return data["rows"]
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        rows = []
+        for _ in range(1000):
+            logger.debug(f"Get data with {lower_bound=}")
+            data = self._request(endpoint=endpoint, payload=payload)
+            if "rows" not in data:
+                return data
+            rows += data["rows"]
+
+            if not full or not data.get("more"):
+                break
+
+            lower_bound = data["next_key"]
+            payload["lower_bound"] = lower_bound
         else:
-            return data
+            raise ValueError("Too many requests (>1000) for table")
+
+        return rows
 
     def push_transaction(
         self,
@@ -250,53 +330,70 @@ class Net(pydantic.BaseModel):
         data = self._request(endpoint=endpoint, payload=payload)
         return data
 
+    def __enter__(self):
+        if self.client is None:
+            self.client = httpx.Client()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]] = None,
+        exc_value: Optional[BaseException] = None,
+        traceback: Optional[types.TracebackType] = None,
+    ) -> None:
+        self.client.__exit__(exc_type, exc_value, traceback)
+
 
 class WaxTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.waxsweden.org/"
+    default_host = "https://testnet.wax.detroitledger.tech"
 
 
 class WaxMainnet(Net):
-    host: pydantic.HttpUrl = "https://facings.waxpub.net"
+    default_host = "https://api.wax.detroitledger.tech"
 
 
 class EosMainnet(Net):
-    host: pydantic.HttpUrl = "https://api.eossweden.org"
+    default_host = "https://api.eos.detroitledger.tech"
 
 
 class KylinTestnet(Net):
-    host: pydantic.HttpUrl = "https://kylin.eossweden.org"
+    default_host = "https://kylin.eossweden.org"
 
 
 class Jungle3Testnet(Net):
-    host: pydantic.HttpUrl = "https://jungle3.eossweden.org"
+    default_host = "https://jungle3.eossweden.org"
+
+
+class Jungle4Testnet(Net):
+    default_host = "https://jungle4.api.eosnation.io"
 
 
 class TelosMainnet(Net):
-    host: pydantic.HttpUrl = "https://telos.caleos.io/"
+    default_host = "https://telos.caleos.io/"
 
 
 class TelosTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.telos.caleos.io"
+    default_host = "https://testnet.telos.detroitledger.tech"
 
 
 class ProtonMainnet(Net):
-    host: pydantic.HttpUrl = "https://proton.cryptolions.io"
+    default_host = "https://proton.cryptolions.io"
 
 
 class ProtonTestnet(Net):
-    host: pydantic.HttpUrl = "https://testnet.protonchain.com"
+    default_host = "https://testnet.protonchain.com"
 
 
 class UosMainnet(Net):
-    host: pydantic.HttpUrl = "https://uos.eosusa.news"
+    default_host = "https://uos.eosusa.news"
 
 
 class FioMainnet(Net):
-    host: pydantic.HttpUrl = "https://fio.cryptolions.io"
+    default_host = "https://fio.cryptolions.io"
 
 
 class Local(Net):
-    host: pydantic.HttpUrl = "http://127.0.0.1:8888"
+    default_host = "http://127.0.0.1:8888"
 
 
 __all__ = [
@@ -304,6 +401,7 @@ __all__ = [
     "EosMainnet",
     "KylinTestnet",
     "Jungle3Testnet",
+    "Jungle4Testnet",
     "TelosMainnet",
     "TelosTestnet",
     "ProtonMainnet",
